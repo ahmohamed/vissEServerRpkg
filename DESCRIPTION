@@ -1,0 +1,25 @@
+Package: vissEServer
+Title: Wrapping functions for vissE server to use
+Version: 0.99.0
+Authors@R: 
+    person("Ahmed", "Mohamed", , "mohamed.a@wehi.edu.au", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-6507-5300"))
+Description: Wrapping functions for vissE server to use, which makes it easier
+    to dockerize and deploy.
+Imports:
+  vissE,
+  msigdb,
+  jsonlite,
+  igraph,
+  tidygraph,
+  AnnotationHub,
+  clusterProfiler,
+  SpatialExperiment,
+  Matrix
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Depends: 
+    R (>= 2.10)
+LazyData: true

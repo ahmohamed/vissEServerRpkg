@@ -1,0 +1,118 @@
+#' @import scran
+#' @import scater
+
+scPreprocess <- function(sce,
+  filter_cell = "adaptive", sum=NULL, detected=NULL, mito=NULL,
+  hvg=2000, min_gene_count = 0
+){
+  sce %>%
+    doQC() %>%
+    filterCells(method = filter_cell, sum=sum, detected=detected, mito=mito) %>%
+    dropLowCount(min_gene_count) %>%
+    doNormalise() %>%
+    doSelectFeatures(n=hvg)
+}
+
+doQC <- function(sce){
+  # get mito genes
+  is_mito = grepl("(^MT-)|(^mt-)", rowData(sce)$Symbol)
+  if (!is.null(rowData(sce)$Chr)) {
+    is_mito = is_mito | rowData(sce)$Chr %in% 'MT'
+  }
+
+  mito_genes <- rowData(sce)$Symbol[is_mito]
+  scater::addPerCellQC(sce, subsets = list(Mito = mito_genes))
+}
+
+cellThresholds <- function(sce, method = "adaptive", sum=NULL, detected=NULL, mito=NULL){
+  method = match.arg(method)
+  if(! all(c("sum", "detected", "subsets_Mito_percent") %in% names(colData(sce)))){
+    stop("sce does not have QC stats")
+  }
+
+  if(method == "adaptive"){
+    isOutlier(sce$sum, log = TRUE, type = "lower") |
+      isOutlier(sce$detected, log = TRUE, type = "lower") |
+      isOutlier(sce$subsets_Mito_percent, log = TRUE, type = "higher")
+  } else {
+    sce$sum < threshold$sum |
+      sce$detected < threshold$detected |
+      sce$subsets_Mito_percent > threshold$mito_percent
+  }
+}
+
+filterCells <- function(sce,  method = "adaptive", sum=NULL, detected=NULL, mito=NULL){
+  sce[, !cellThresholds(sce,  method, sum, detected, mito)]
+}
+
+doNormalise <- function(sce, ...){
+  set.seed(1234)
+  clust_sce <- scran::quickCluster(sce, min.size = min(100, ncol(sce)))
+  sce <- scran::computeSumFactors(sce, cluster = clust_sce, min.mean=0.1)
+  scater::logNormCounts(sce)
+}
+
+doSelectFeatures <- function(sce, n = 2000, ...){
+  dec <-  scran::modelGeneVar(sce) # HVG 2000
+  rowSubset(sce, "HVG") <-  scran::getTopHVGs(dec, n = n)
+
+  sce
+}
+
+dropLowCount <- function(sce, lower = 0){
+  sce[scuttle::perFeatureQCMetrics(sce)$detected > lower, ]
+}
+
+## Dimred
+runPCA <- function(sce, ncomponents = 50){
+  # Use HVGs if present
+  genes <- rowData(sce)$Symbol
+  if(!is.null(rowData(sce)$HVG)){
+    genes <- genes[rowData(sce)$HVG]
+  }
+
+  scater::runPCA(sce, ncomponents = 50, subset_row = genes)
+}
+
+runUMAP <- function(sce){
+  scater::runUMAP(sce, dimred = "PCA")
+}
+
+
+
+## FA
+doFA <- function(sce, gsc, dimred="PCA", ncomponents=15) {
+  pca_weights <- attr(reducedDim(sce, type = dimred), "rotation")[, 1:ncomponents]
+  gsc = gsc[sapply(gsc, function(x) sum(GSEABase::geneIds(x) %in% rownames(pca_weights)) >= 5)]
+  franks = singscore::rankGenes(pca_weights)
+  pal_fsea = singscore::multiScore(franks, gsc)$Scores
+  pal_fsea
+}
+
+visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000) {
+  if (top_n_sets < 100) {
+    stop("top_n_sets should be at least 100 geneset")
+  }
+  pal_fsea <- doFA(sce, msigdb, dimred=dimred, ncomponents=ncomponents)
+
+  lapply(1:ncomponents, function(fct) {
+    fct_weights = attr(reducedDim(sce, type = dimred), "rotation")[, fct]
+    fct_proj = reducedDim(sce, dimred)[, fct]
+    fct_sc = pal_fsea[, fct]
+    top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
+    siggs = msigdb[names(top_n_sets)]
+    visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight")
+  })
+}
+
+
+summarizeFA <- function(fa_results) {
+  out = list(results=fa_results)
+  out$summary = lapply(fa_results, function(f) {
+    f$words %>%
+      filter(as.numeric(Cluster) < 5) %>%
+      dplyr::group_by(Cluster) %>%
+      dplyr::slice_max(freq, n=20, with_ties = FALSE)
+  })
+  out
+}
