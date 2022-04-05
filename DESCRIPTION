@@ -15,7 +15,9 @@ Imports:
   AnnotationHub,
   clusterProfiler,
   SpatialExperiment,
-  Matrix
+  Matrix,
+  scran, 
+  scater
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -6,10 +6,9 @@
 
 api_version = 0.1
 
-getdata <- function(...) {
+getdata <- function(x) {
   e <- new.env()
-  args = list(...)
-  name <- data(list=args, envir = e)[[1]]
+  name <- utils::data(list=c(x), envir = e)[[1]]
   e[[name]]
 }
 
