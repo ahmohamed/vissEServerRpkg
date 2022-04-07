@@ -1,9 +1,3 @@
-#' @import vissE
-#' @import msigdb
-#' @import igraph
-#' @import tidygraph
-#' @import jsonlite
-
 api_version = 0.1
 
 getdata <- function(x) {
@@ -37,12 +31,12 @@ getPPI <- function(org="hs") {
 
 visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic") {
   #compute geneset overlaps between significant genesets
-  gs_ovlap = computeMsigOverlap(siggs, thresh = 0.25)
+  gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = 0.25)
   #create a network from overlaps
-  gs_ovnet = computeMsigNetwork(gs_ovlap, siggs)
+  gs_ovnet = vissE::computeMsigNetwork(gs_ovlap, siggs)
 
   #identify clusters
-  grps = cluster_walktrap(gs_ovnet)
+  grps = igraph::cluster_walktrap(gs_ovnet)
   #extract clustering results
   grps = igraph::groups(grps)
   #sort by stat
@@ -57,10 +51,10 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   grps_df = purrr::map_dfr(grps, function(x) data.frame('Geneset' = x), .id = 'Cluster')
 
   # use numeric ids instead of names to reduce output size
-  V(gs_ovnet)$label = V(gs_ovnet)$name
-  V(gs_ovnet)$name = 1:vcount(gs_ovnet)
+  igraph::V(gs_ovnet)$label = igraph::V(gs_ovnet)$name
+  igraph::V(gs_ovnet)$name = 1:igraph::vcount(gs_ovnet)
 
-  p2 = suppressWarnings(plotMsigWordcloud(siggs, grps, type = 'Name'))
+  p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name'))
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
   out = list(
@@ -73,11 +67,11 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   if (!is.null(gStats)) {
     ppi = getPPI(org="hs")
     #compute gene-level stats
-    p3 = plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
+    p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
     ppi_grps = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats) %>%
-      activate(nodes) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
-      activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
-      to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
+      tidygraph::activate(nodes) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
+      tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
+      tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
 
     out$genestats = p3$data
     out$ppi_grps = ppi_grps

@@ -1,4 +1,3 @@
-#' @import clusterProfiler
 
 #' @export
 ora = function(genelist, idtype='SYM', org='hs', collections='all') {
@@ -8,7 +7,7 @@ ora = function(genelist, idtype='SYM', org='hs', collections='all') {
   msigdb_cp = lapply(msigdb, function(x)
     data.frame('term' = GSEABase::setName(x), 'gene' = GSEABase::geneIds(x)))
   msigdb_cp = do.call(rbind, msigdb_cp)
-  res = enricher(genelist, TERM2GENE = msigdb_cp)
+  res = clusterProfiler::enricher(genelist, TERM2GENE = msigdb_cp)
   res = as.data.frame(res)
   res_sig = res[res$p.adjust < 0.05, ]
   siggs = msigdb[res_sig$ID]

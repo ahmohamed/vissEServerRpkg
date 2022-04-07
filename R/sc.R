@@ -1,6 +1,3 @@
-#' @import AnnotationHub
-#' @import SingleCellExperiment
-
 read_3files <- function(matrix.loc, gene.loc, barcode.loc) {
   gene.info <- read.delim(gene.loc, header = FALSE, colClasses = "character",
     stringsAsFactors = FALSE, quote = "", comment.char = "")
@@ -27,7 +24,7 @@ sc10x <- function (mat, features, barcodes, col.names = TRUE) {
     full_data[[i]] <- current$mat
     gene_info_list[[i]] <- current$gene.info
     cell.names <- current$cell.names
-    cell_info_list[[i]] <- DataFrame(Sample = rep(sample.names[i],
+    cell_info_list[[i]] <- S4Vectors::DataFrame(Sample = rep(sample.names[i],
       length(cell.names)), Barcode = cell.names, row.names = NULL)
   }
   if (nsets > 1 && length(unique(gene_info_list)) != 1L) {
@@ -48,7 +45,7 @@ sc10x <- function (mat, features, barcodes, col.names = TRUE) {
     }
     colnames(full_data) <- cnames
   }
-  SingleCellExperiment(list(counts = full_data), rowData = gene_info,
+  SingleCellExperiment::SingleCellExperiment(list(counts = full_data), rowData = gene_info,
     colData = cell_info, metadata = list(Samples = list("Sample")))
 }
 
@@ -56,15 +53,15 @@ readSce <- function(mat, features, barcodes, annot = NULL){
   sce <- sc10x(mat, features, barcodes, col.names = TRUE)
 
   #add gene annotations
-  ah <- AnnotationHub()
+  ah <- AnnotationHub::AnnotationHub()
 
   # TODO: mm annotations
   ensdb  <-  ah[['AH89426']] # Ensembl 103 EnsDb for Homo sapiens
-  rowData(sce)$Chr  <-  mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'SEQNAME')
-  rowData(sce)$Biotype  <-  mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'GENEBIOTYPE')
+  SummarizedExperiment::rowData(sce)$Chr  <-  AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'SEQNAME')
+  SummarizedExperiment::rowData(sce)$Biotype  <-  AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'GENEBIOTYPE')
 
   # change names to Symbol
-  rownames(sce) <- rowData(sce)$Symbol
+  rownames(sce) <- SummarizedExperiment::rowData(sce)$Symbol
   sce
 }
 

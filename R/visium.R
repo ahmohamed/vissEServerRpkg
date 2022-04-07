@@ -6,11 +6,13 @@ readSpe <- function(hdf5file, tissue_positions, name="Visium Sample") {
   obs <- intersect(colnames(sce), rownames(spd))
   sce <- sce[, obs]
   spd <- spd[obs, ]
-  spe = SpatialExperiment(assays = assays(sce), rowData = DataFrame(Symbol = rowData(sce)$Symbol),
-    sample_id = name, spatialData = DataFrame(spd),
+  spe = SpatialExperiment::SpatialExperiment(
+    assays = SummarizedExperiment::assays(sce),
+    rowData = S4Vectors::DataFrame(Symbol = SummarizedExperiment::rowData(sce)$Symbol),
+    sample_id = name, spatialData = S4Vectors::DataFrame(spd),
     spatialCoordsNames = c("pxl_col_in_fullres", "pxl_row_in_fullres"))
 
-  rownames(spe) <- rowData(spe)$Symbol
+  rownames(spe) <- SummarizedExperiment::rowData(spe)$Symbol
   spe
 }
 

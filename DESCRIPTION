@@ -6,10 +6,11 @@ Authors@R:
            comment = c(ORCID = "0000-0001-6507-5300"))
 Description: Wrapping functions for vissE server to use, which makes it easier
     to dockerize and deploy.
-Imports:
+Suggests:
   vissE,
   msigdb,
   jsonlite,
+  utils,
   igraph,
   tidygraph,
   AnnotationHub,
