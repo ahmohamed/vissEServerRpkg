@@ -37,8 +37,12 @@ visium <- function(h5, tissue_positions,
   print("Performing FA")
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   out = visseFA(sce=spe, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets)
+  out = summarizeFA(out)
   # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
   print("Serializing Results")
+  out$api_version = api_version
+  out$method = "visium"
+
   jsonlite::toJSON(out, digits=2)
   # lapply(out, jsonlite::toJSON, digits=2)
   # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
