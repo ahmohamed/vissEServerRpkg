@@ -9,6 +9,7 @@ Description: Wrapping functions for vissE server to use, which makes it easier
 Suggests:
   vissE,
   msigdb,
+  singscore,
   jsonlite,
   utils,
   igraph,
