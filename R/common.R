@@ -31,12 +31,11 @@ getPPI <- function(org="hs") {
   ppi = imex_0821[imex_0821$Taxid %in% '9606', ]
 }
 
-visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic") {
+visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL) {
   #compute geneset overlaps between significant genesets
   gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = 0.25)
   #create a network from overlaps
   gs_ovnet = vissE::computeMsigNetwork(gs_ovlap, siggs)
-
   #identify clusters
   grps = igraph::cluster_walktrap(gs_ovnet)
   #extract clustering results
@@ -55,13 +54,17 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   # use numeric ids instead of names to reduce output size
   igraph::V(gs_ovnet)$label = igraph::V(gs_ovnet)$name
   igraph::V(gs_ovnet)$name = 1:igraph::vcount(gs_ovnet)
+  vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices')
+  if (!is.null(gset_attrs)) {
+    vertices_df = left_join(vertices_df, gset_attrs, by=c("label"="ID"))
+  }
 
   p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name'))
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
   out = list(
     'edges' =  igraph::as_data_frame(gs_ovnet, 'edges'),
-    'nodes' = dplyr::left_join(grps_df, igraph::as_data_frame(gs_ovnet, 'vertices'), by=c(Geneset = 'label')),
+    'nodes' = dplyr::left_join(grps_df, vertices_df, by=c(Geneset = 'label')),
     # 'groups' = plyr::ldply(grps, function(x) data.frame('Geneset' = x), .id = 'Cluster'),
     # 'geneMembership' = head(geneIds(siggs[V(gs_ovnet)$label])),
     'words' = words
