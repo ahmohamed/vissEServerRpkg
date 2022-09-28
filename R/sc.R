@@ -53,6 +53,7 @@ readSce <- function(mat, features, barcodes, annot = NULL){
   sce <- sc10x(mat, features, barcodes, col.names = TRUE)
 
   #add gene annotations
+  AnnotationHub::setAnnotationHubOption("ASK", FALSE)
   ah <- AnnotationHub::AnnotationHub()
 
   # TODO: mm annotations
@@ -83,10 +84,11 @@ sc <- function(mat, features, barcodes,
 
   print("Performing FA")
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
-  out = visseFA(sce=sce, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets)
+  out = visseFA(sce=sce, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets, org=org)
   out = summarizeFA(out)
   # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
   print("Serializing Results")
+  out$geneSummary = geneSummary(msigdb, rownames(sce))
   out$api_version = api_version
   out$method = "SC"
   jsonlite::toJSON(out, digits=2)
