@@ -86,11 +86,14 @@ doFA <- function(sce, gsc, dimred="PCA", ncomponents=15) {
   pal_fsea
 }
 
-visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000) {
+visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff_scores=0.3, org='hs') {
   if (top_n_sets < 100) {
     stop("top_n_sets should be at least 100 geneset")
   }
   pal_fsea <- doFA(sce, msigdb, dimred=dimred, ncomponents=ncomponents)
+
+  gene_counts = lapply(geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
+  gset_attrs = data.frame(ID=names(gene_counts), Count=unlist(gene_counts))
 
   lapply(1:ncomponents, function(fct) {
     fct_weights = attr(SingleCellExperiment::reducedDim(sce, type = dimred), "rotation")[, fct]
@@ -98,7 +101,7 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000) {
     fct_sc = pal_fsea[, fct]
     top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
     siggs = msigdb[names(top_n_sets)]
-    visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight")
+    visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight", gset_attrs = gset_attrs, org=org)
   })
 }
 

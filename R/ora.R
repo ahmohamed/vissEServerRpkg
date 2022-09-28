@@ -15,7 +15,8 @@ ora = function(genelist, idtype='SYM', org='hs', collections='all') {
 
   siggs = msigdb[res_sig$ID]
   gsfdr = setNames(res$p.adjust, res_sig$ID)
-  out = visseWrapper(siggs, -log10(gsfdr), gset_attrs = gset_attrs)
+  out = visseWrapper(siggs, -log10(gsfdr), gset_attrs = gset_attrs, org=org)
+  out$geneSummary = geneSummary(msigdb, genelist)
   out$api_version = api_version
   out$method = "ORA"
   jsonlite::toJSON(out, digits=2)

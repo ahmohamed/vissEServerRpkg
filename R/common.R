@@ -31,7 +31,14 @@ getPPI <- function(org="hs") {
   ppi = imex_0821[imex_0821$Taxid %in% '9606', ]
 }
 
-visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL) {
+geneSummary <- function(msigdb, genes) {
+  universe = unique(unlist(GSEABase::geneIds(msigdb)))
+  both = sum(universe %in% genes)
+  not_used = sum(genes %in% universe)
+  c(length(universe), both, not_used)
+}
+
+visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs") {
   #compute geneset overlaps between significant genesets
   gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = 0.25)
   #create a network from overlaps
@@ -54,12 +61,13 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   # use numeric ids instead of names to reduce output size
   igraph::V(gs_ovnet)$label = igraph::V(gs_ovnet)$name
   igraph::V(gs_ovnet)$name = 1:igraph::vcount(gs_ovnet)
+  igraph::V(gs_ovnet)$degree = igraph::degree(gs_ovnet)
   vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices')
   if (!is.null(gset_attrs)) {
-    vertices_df = left_join(vertices_df, gset_attrs, by=c("label"="ID"))
+    vertices_df = dplyr::left_join(vertices_df, gset_attrs, by=c("label"="ID"))
   }
 
-  p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name'))
+  p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name', org = org))
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
   out = list(
@@ -78,7 +86,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
       tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
       tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
 
-    out$genestats = p3$data
+    out$genestats = dplyr::select(p3$data, -rank)
     out$ppi_grps = ppi_grps
   }
 
