@@ -1,6 +1,6 @@
 library(tidyverse)
 genes = readRDS("data-raw/emt_allg.rds") %>%
-  filter(gene_biotype %in% 'protein_coding', FDR < 0.01)
+  dplyr::filter(gene_biotype %in% 'protein_coding', FDR < 0.01)
 
 
 write_csv(genes, 'data-raw/ora/genes_table.csv')
