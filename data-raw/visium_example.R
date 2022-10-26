@@ -1,4 +1,3 @@
-library(tidyverse)
 visium_example = visium(
   h5 = "data-raw/visium/raw_feature_bc_matrix.h5",
   tissue_positions = "data-raw/visium/tissue_positions_list.csv",

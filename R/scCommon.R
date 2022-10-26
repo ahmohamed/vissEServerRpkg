@@ -92,7 +92,7 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff
   }
   pal_fsea <- doFA(sce, msigdb, dimred=dimred, ncomponents=ncomponents)
 
-  gene_counts = lapply(geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
+  gene_counts = lapply(GSEABase::geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
   gset_attrs = data.frame(ID=names(gene_counts), Count=unlist(gene_counts))
 
   lapply(1:ncomponents, function(fct) {

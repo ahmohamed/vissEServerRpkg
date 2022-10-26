@@ -67,7 +67,7 @@ readSce <- function(mat, features, barcodes, annot = NULL){
 }
 
 #' @export
-sc <- function(mat, features, barcodes,
+sc <- funwrapper(function(mat, features, barcodes,
   filter_cell = "adaptive", sum=NULL, detected=NULL, mito=NULL,
   hvg=2000, min_gene_count = 0,
   dimred="PCA", ncomponents=5, top_n_sets=1000,
@@ -94,4 +94,4 @@ sc <- function(mat, features, barcodes,
   jsonlite::toJSON(out, digits=2)
   # lapply(out, jsonlite::toJSON, digits=2)
   # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
-}
+})

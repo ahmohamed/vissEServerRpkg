@@ -17,7 +17,7 @@ readSpe <- function(hdf5file, tissue_positions, name="Visium Sample") {
 }
 
 #' @export
-visium <- function(h5, tissue_positions,
+visium <- funwrapper(function(h5, tissue_positions,
   filter_cell = "adaptive", sum=NULL, detected=NULL, mito=NULL,
   hvg=2000, min_gene_count = 0,
   dimred="PCA", ncomponents=5, top_n_sets=1000,
@@ -47,4 +47,4 @@ visium <- function(h5, tissue_positions,
   jsonlite::toJSON(out, digits=2)
   # lapply(out, jsonlite::toJSON, digits=2)
   # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
-}
+})

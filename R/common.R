@@ -20,7 +20,7 @@ subsetCollection <- function(gsc, collection = c()) {
 
 getCollections <- function(idtype='SYM', org='hs', collections='all') {
   msigdb = getdata(paste0(org, '_', idtype))
-  if (collections != 'all') {
+  if (!'all' %in% collections) {
     msigdb = subsetCollection(msigdb, collections)
   }
   msigdb
@@ -39,14 +39,26 @@ geneSummary <- function(msigdb, genes) {
 }
 
 visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs") {
+  message(sprintf("Starting vissE analysis for %d genesets", length(siggs)))
+  if (length(siggs) < 10) {
+    stop("Enrichment results has less that 10 significant genesets. Consider adding more geneset collections.")
+  }
+
   #compute geneset overlaps between significant genesets
-  gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = 0.25)
+  thresh = 0.25
+  gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = thresh)
+  message(sprintf("Detected %d genesets overalapps with threshold %f", nrow(gs_ovlap), thresh))
+
   #create a network from overlaps
   gs_ovnet = vissE::computeMsigNetwork(gs_ovlap, siggs)
+  message(sprintf("Geneset network computed with %d nodes and %d edges", igraph::vcount(gs_ovnet), igraph::ecount(gs_ovnet)))
+
   #identify clusters
   grps = igraph::cluster_walktrap(gs_ovnet)
   #extract clustering results
   grps = igraph::groups(grps)
+  message(sprintf("Found %d geneset clusters", length(grps)))
+
   #sort by stat
   sortstat = plyr::ldply(grps, function(x) {
     fdr.stat = median(abs(gsStats[x]))
@@ -67,6 +79,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     vertices_df = dplyr::left_join(vertices_df, gset_attrs, by=c("label"="ID"))
   }
 
+  message("Computing wordclouds")
   p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name', org = org))
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
@@ -79,9 +92,11 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   )
   if (!is.null(gStats)) {
     ppi = getPPI(org="hs")
+
     #compute gene-level stats
+    message(sprintf("Computing PPI network for %d genes", length(gStats)))
     p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
-    ppi_grps = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats) %>%
+    ppi_grps = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org) %>%
       tidygraph::activate(nodes) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
       tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
       tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
