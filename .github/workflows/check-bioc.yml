@@ -253,8 +253,5 @@ jobs:
       - uses: docker/build-push-action@v3
         if: "!contains(github.event.head_commit.message, '/nodocker') && env.run_docker == 'true' && runner.os == 'Linux' && matrix.config.r != 'devel'"
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ahmohamed/visse_server_rpkg
-          tags: latest
+          tags: ahmohamed/visse_server_rpkg:latest
           push: true
