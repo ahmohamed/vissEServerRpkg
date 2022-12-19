@@ -257,3 +257,4 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ahmohamed/visse_server_rpkg
           tags: latest
+          push: true
