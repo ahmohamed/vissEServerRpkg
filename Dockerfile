@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM bioconductor/bioconductor_docker:RELEASE_3_14
+FROM bioconductor/bioconductor_docker:RELEASE_3_16
 RUN R -e "BiocManager::install(c('SpatialExperiment', 'clusterProfiler', 'scran', 'scater', 'singscore', 'vissE'), ask=F)"
 
 RUN mkdir /root/rpkg
