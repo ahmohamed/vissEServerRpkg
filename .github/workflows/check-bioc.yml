@@ -53,7 +53,8 @@ jobs:
       matrix:
         config:
           # - { os: ubuntu-latest, r: 'devel', bioc: '3.15', cont: "bioconductor/bioconductor_docker:devel", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
-          - { os: ubuntu-latest, r: '4.1', bioc: '3.14', cont: "bioconductor/bioconductor_docker:RELEASE_3_14", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
+          # - { os: ubuntu-latest, r: '4.1', bioc: '3.14', cont: "bioconductor/bioconductor_docker:RELEASE_3_14", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
+          - { os: ubuntu-latest, r: '4.2.2', bioc: '3.16', cont: "bioconductor/bioconductor_docker:RELEASE_3_16", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
           # - { os: macOS-latest, r: '4.1', bioc: '3.14'}
           # - { os: windows-latest, r: '4.1', bioc: '3.14'}
     env:
@@ -121,29 +122,6 @@ jobs:
       #     echo $sysreqs
       #     sudo -s eval "$sysreqs"
 
-      # - name: Install macOS system dependencies
-      #   if: matrix.config.os == 'macOS-latest'
-      #   run: |
-      #     ## Enable installing XML from source if needed
-      #     brew install libxml2
-      #     echo "XML_CONFIG=/usr/local/opt/libxml2/bin/xml2-config" >> $GITHUB_ENV
-
-      #     ## Required to install magick as noted at
-      #     ## https://github.com/r-lib/usethis/commit/f1f1e0d10c1ebc75fd4c18fa7e2de4551fd9978f#diff-9bfee71065492f63457918efcd912cf2
-      #     brew install imagemagick@6
-
-      #     ## For textshaping, required by ragg, and required by pkgdown
-      #     brew install harfbuzz fribidi
-
-      #     ## For installing usethis's dependency gert
-      #     brew install libgit2
-
-      # - name: Install Windows system dependencies
-      #   if: runner.os == 'Windows'
-      #   run: |
-      #     ## Edit below if you have any Windows system dependencies
-      #   shell: Rscript {0}
-
       # - name: Install BiocManager
       #   run: |
       #     message(paste('****', Sys.time(), 'installing BiocManager ****'))
@@ -175,7 +153,7 @@ jobs:
       #     ## Pass #2 at installing dependencies
       #     message(paste('****', Sys.time(), 'pass number 2 at installing dependencies: any remaining dependencies ****'))
       #     remotes::install_local(dependencies = TRUE, repos = BiocManager::repositories(), build_vignettes = TRUE, upgrade = TRUE)
-          
+
       #     ## For running the checks
       #     message(paste('****', Sys.time(), 'installing rcmdcheck and BiocCheck ****'))
       #     remotes::install_cran("rcmdcheck")
@@ -277,5 +255,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ahmohamed/visse_server_rpkg 
+          repository: ahmohamed/visse_server_rpkg
           tags: latest
