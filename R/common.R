@@ -47,7 +47,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   #compute geneset overlaps between significant genesets
   thresh = 0.25
   gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = thresh)
-  message(sprintf("Detected %d genesets overalapps with threshold %f", nrow(gs_ovlap), thresh))
+  message(sprintf("Detected %d genesets overalaps with threshold %f", nrow(gs_ovlap), thresh))
 
   #create a network from overlaps
   gs_ovnet = vissE::computeMsigNetwork(gs_ovlap, siggs)

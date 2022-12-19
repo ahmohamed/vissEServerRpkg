@@ -91,7 +91,7 @@ sc <- funwrapper(function(mat, features, barcodes,
   out$geneSummary = geneSummary(msigdb, rownames(sce))
   out$api_version = api_version
   out$method = "SC"
-  jsonlite::toJSON(out, digits=2)
+  out
   # lapply(out, jsonlite::toJSON, digits=2)
   # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
 })

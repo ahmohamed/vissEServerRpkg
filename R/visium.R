@@ -43,8 +43,7 @@ visium <- funwrapper(function(h5, tissue_positions,
   out$geneSummary = geneSummary(msigdb, rownames(spe))
   out$api_version = api_version
   out$method = "visium"
-
-  jsonlite::toJSON(out, digits=2)
+  out
   # lapply(out, jsonlite::toJSON, digits=2)
   # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
 })

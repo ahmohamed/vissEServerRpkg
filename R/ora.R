@@ -15,7 +15,7 @@ ora = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all') {
   res = clusterProfiler::enricher(genelist, TERM2GENE = msigdb_cp)
   res = as.data.frame(res)
   res_sig = res[res$p.adjust < 0.05 & !is.na(res$p.adjust), ]
-  message(sprintf("Found %d signifacntly enriched genesets", nrow(res_sig)))
+  message(sprintf("Found %d significantly enriched genesets", nrow(res_sig)))
 
   gset_attrs = dplyr::select(res_sig, ID, FDR=p.adjust, Count)
   gset_attrs$FDR = -log10(gset_attrs$FDR)
