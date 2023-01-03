@@ -12,6 +12,7 @@ Suggests:
   msigdb,
   singscore,
   jsonlite,
+  readr,
   utils,
   igraph,
   tidygraph,

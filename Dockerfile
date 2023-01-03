@@ -6,4 +6,4 @@ RUN mkdir /root/examples
 COPY . /root/rpkg
 
 RUN R -e "devtools::install('/root/rpkg', dependencies=T)"
-RUN cd /root/rpkg && R -e "lapply(list.files('data-raw', '*_example.R', full.names = T), source)"
+RUN cd /root/rpkg && R -e "library(vissEServer);lapply(list.files('data-raw', '*_example.R', full.names = T), source)"
