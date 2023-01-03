@@ -9,7 +9,7 @@ gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
   pathways = setNames(lapply(msigdb, GSEABase::geneIds), lapply(msigdb, GSEABase::setName))
-  res <- fgsea::fgsea(pathways, genelist)
+  res <- fgsea::fgsea(pathways, genelist, nproc=1)
   res_sig = res[res$padj < 0.05 & !is.na(res$padj) & !is.na(res$pathway), ]
   message(sprintf("Found %d significantly enriched genesets", nrow(res_sig)))
 

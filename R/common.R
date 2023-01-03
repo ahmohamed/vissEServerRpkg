@@ -34,7 +34,7 @@ getPPI <- function(org="hs") {
 geneSummary <- function(msigdb, genes) {
   universe = unique(unlist(GSEABase::geneIds(msigdb)))
   both = sum(universe %in% genes)
-  not_used = sum(genes %in% universe)
+  not_used = sum(!genes %in% universe)
   c(length(universe), both, not_used)
 }
 
