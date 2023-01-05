@@ -5,5 +5,5 @@ sc_example = sc(
   collections = c('CP:REACTOME', 'CP:BIOCARTA', 'CP:PID', 'CP:KEGG', 'CP:WIKIPATHWAYS', 'h', 'GO:BP', 'GO:CC', 'GO:MF'))
 
 usethis::use_data(sc_example, overwrite = TRUE)
-jsonlite::write_json(jsonlite::fromJSON(runExample('sc')), '../examples/sc.json')
+jsonlite::write_json(jsonlite::fromJSON(sc_example), '../examples/sc.json')
 
