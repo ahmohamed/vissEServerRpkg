@@ -101,7 +101,10 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff
     fct_sc = pal_fsea[, fct]
     top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
     siggs = msigdb[names(top_n_sets)]
-    visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight", gset_attrs = gset_attrs, org=org)
+    out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight", gset_attrs = gset_attrs, org=org)
+    out$gene_summary = geneSummary(msigdb, rownames(sce))
+    out$geneset_summary = genesetSummary(msigdb, out)
+    out
   })
 }
 

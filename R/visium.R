@@ -40,7 +40,6 @@ visium <- funwrapper(function(h5, tissue_positions,
   out = summarizeFA(out)
   # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
   print("Serializing Results")
-  out$geneSummary = geneSummary(msigdb, rownames(spe))
   out$api_version = api_version
   out$method = "visium"
   out

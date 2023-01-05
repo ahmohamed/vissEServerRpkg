@@ -17,7 +17,7 @@ with_handlers <- function(code, .logger=NULL, .console=TRUE) {
   wHandler <- function(w) {
     if (!grepl("^package .* was built under R", w$message)) {
       if (!is.null(.logger)) .logger(w$message)
-      if (.console) futile.logger::flog.info(w$message)
+      # if (.console) futile.logger::flog.info(w$message)
 
       fmt = futile.logger::flog.layout()(futile.logger::WARN, w$message)
       if (.console) message(fmt)

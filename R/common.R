@@ -35,7 +35,30 @@ geneSummary <- function(msigdb, genes) {
   universe = unique(unlist(GSEABase::geneIds(msigdb)))
   both = sum(universe %in% genes)
   not_used = sum(!genes %in% universe)
-  c(length(universe), both, not_used)
+  stats = list("Universe Size"=length(universe), "Used in Analysis"=both, "Not Mapped"=not_used)
+  tibble::tibble(stat=names(stats), value=stats)
+}
+
+genesetSummary <- function(msigdb, out) {
+  nodes = dplyr::ungroup(out$nodes)
+  geneset_stats = nodes %>% dplyr::summarise(
+    "Significant Genesets"=dplyr::n(), "Categories"=dplyr::n_distinct(Category),
+    "Subcategories"=dplyr::n_distinct(SubCategory), "Average Geneset Size"=mean(Size, na.rm=T),
+    "Geneset Clusters"=dplyr::n_distinct(Cluster)
+  ) %>% unlist() %>% floor()
+  avg_cluster_size = nodes %>% dplyr::group_by(Cluster) %>% dplyr::count() %>% dplyr::pull(n) %>% mean(na.rm=T) %>% floor()
+
+  stats = as.list(c(
+    "Tested Genesets"=length(msigdb),
+    geneset_stats,
+    "Average Cluster Size"=avg_cluster_size
+  ))
+
+  list(
+    stats=tibble::tibble(stat=names(stats), value=stats),
+    category_tally = nodes %>% dplyr::group_by(Category) %>% dplyr::summarise(count=dplyr::n()),
+    subcategory_tally = nodes %>% dplyr::group_by(Category, SubCategory) %>% dplyr::summarise(count=dplyr::n())
+  )
 }
 
 visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs") {
@@ -74,7 +97,8 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   igraph::V(gs_ovnet)$label = igraph::V(gs_ovnet)$name
   igraph::V(gs_ovnet)$name = 1:igraph::vcount(gs_ovnet)
   igraph::V(gs_ovnet)$degree = igraph::degree(gs_ovnet)
-  vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices')
+  vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices') %>%
+    dplyr::mutate(SubCategory = dplyr::coalesce(SubCategory, Category))
   if (!is.null(gset_attrs)) {
     vertices_df = dplyr::left_join(vertices_df, gset_attrs, by=c("label"="ID"))
   }
@@ -97,7 +121,8 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     message(sprintf("Computing PPI network for %d genes", length(gStats)))
     p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
     ppi_grps = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org) %>%
-      tidygraph::activate(nodes) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
+      tidygraph::activate(nodes) %>%
+        tidygraph::filter(!is.na(Degree)) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
       tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
       tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
 

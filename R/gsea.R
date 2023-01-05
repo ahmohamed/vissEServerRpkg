@@ -20,7 +20,8 @@ gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
   gset_attrs$FDR = -log10(gset_attrs$FDR)
 
   out = visseWrapper(siggs, -log10(gsfdr), genelist, "logFC", gset_attrs = gset_attrs, org=org)
-  out$geneSummary = geneSummary(msigdb, names(genelist))
+  out$gene_summary = geneSummary(msigdb, names(genelist))
+  out$geneset_summary = genesetSummary(msigdb, out)
   out$api_version = api_version
   out$method = "GSEA"
   out

@@ -88,7 +88,6 @@ sc <- funwrapper(function(mat, features, barcodes,
   out = summarizeFA(out)
   # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
   print("Serializing Results")
-  out$geneSummary = geneSummary(msigdb, rownames(sce))
   out$api_version = api_version
   out$method = "SC"
   out
