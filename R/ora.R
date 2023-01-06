@@ -8,13 +8,31 @@ ora = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all') {
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
+  gene_summary = geneSummary(msigdb, genelist)
+  if (gene_summary$value[["Used in Analysis"]] == 0) {
+    stop("No genes were mapped. Provided genelist is invalid.")
+  }
+
+  message(sprintf(
+    "%d out of %d genes provided will be used for the analysis with %d genes not mapped",
+    gene_summary$value[["Used in Analysis"]], length(genelist), gene_summary$value[["Not Mapped"]]
+  ))
+
   #prepare for cluster profiler
   msigdb_cp = lapply(msigdb, function(x)
     data.frame('term' = GSEABase::setName(x), 'gene' = GSEABase::geneIds(x)))
   msigdb_cp = do.call(rbind, msigdb_cp)
   res = clusterProfiler::enricher(genelist, TERM2GENE = msigdb_cp)
+  if (is.null(res)) {
+    stop("Pathway enrichment failed. Check the provided gene list.")
+  }
+
   res = as.data.frame(res)
   res_sig = res[res$p.adjust < 0.05 & !is.na(res$p.adjust), ]
+  if (nrow(res_sig) < 10) {
+    stop("Enrichment results has less that 10 significant genesets. Consider adding more geneset collections.")
+  }
+
   message(sprintf("Found %d significantly enriched genesets", nrow(res_sig)))
 
   gset_attrs = dplyr::select(res_sig, ID, FDR=p.adjust, Count)
@@ -23,7 +41,7 @@ ora = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all') {
   siggs = msigdb[res_sig$ID]
   gsfdr = setNames(res$p.adjust, res_sig$ID)
   out = visseWrapper(siggs, -log10(gsfdr), gset_attrs = gset_attrs, org=org)
-  out$gene_summary = geneSummary(msigdb, genelist)
+  out$gene_summary = gene_summary
   out$geneset_summary = genesetSummary(msigdb, out)
   out$api_version = api_version
   out$method = "ORA"

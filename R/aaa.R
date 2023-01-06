@@ -1,3 +1,13 @@
+ignored_prefixes <- paste("^", c(
+  'WARN',
+  "Loading",
+  'loading',
+  'snapshot',
+  'Attaching',
+  'The following objects',
+  'Welcome to Bioconductor'
+), sep = '', collapse = '|')
+
 suppressively <- function(f) {
   function(...) suppressPackageStartupMessages(f(...))
 }
@@ -6,12 +16,14 @@ suppressively <- function(f) {
 with_handlers <- function(code, .logger=NULL, .console=TRUE) {
   messages <- character()
   mHandler <- function(m) {
+    if (grepl(ignored_prefixes, m$message) || trimws(m$message) == "") {
+      return(invokeRestart("muffleMessage"))
+    }
     if (!is.null(.logger)) .logger(m$message)
-
     fmt = futile.logger::flog.layout()(futile.logger::INFO, m$message)
     if (.console) message(fmt)
     messages <<- c(messages, fmt)
-    invokeRestart("muffleMessage")
+
   }
   warnings <- character()
   wHandler <- function(w) {
@@ -66,7 +78,10 @@ safely2 <- function(f) {
 }
 
 funwrapper <- function(f) {
-  return (function(..., .logger=NULL, .console=TRUE) {
+  return (function(..., .logger=NULL, .console=TRUE, .nowrap=FALSE) {
+    if (.nowrap) {
+      return(f(...))
+    }
     res <- safely2(f)(..., .logger=.logger, .console=.console)
     jsonlite::toJSON(res, digits=2)
   })

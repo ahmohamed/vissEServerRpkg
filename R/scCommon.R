@@ -90,6 +90,16 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff
   if (top_n_sets < 100) {
     stop("top_n_sets should be at least 100 geneset")
   }
+
+  gene_summary = geneSummary(msigdb, rownames(sce))
+  if (gene_summary$value[["Used in Analysis"]] == 0) {
+    stop("No genes were mapped. Provided genelist is invalid.")
+  }
+
+  message(sprintf(
+    "%d out of %d genes provided will be used for the analysis with %d genes not mapped",
+    gene_summary$value[["Used in Analysis"]], length(rownames(sce)), gene_summary$value[["Not Mapped"]]
+  ))
   pal_fsea <- doFA(sce, msigdb, dimred=dimred, ncomponents=ncomponents)
 
   gene_counts = lapply(GSEABase::geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
@@ -102,7 +112,7 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff
     top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
     siggs = msigdb[names(top_n_sets)]
     out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name="Weight", gset_attrs = gset_attrs, org=org)
-    out$gene_summary = geneSummary(msigdb, rownames(sce))
+    out$gene_summary = gene_summary
     out$geneset_summary = genesetSummary(msigdb, out)
     out
   })
