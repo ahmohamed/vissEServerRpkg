@@ -1,10 +1,11 @@
 ignored_prefixes <- paste("^", c(
   'WARN',
   "Loading",
-  'loading',
+  'loading', 'downloading', 'retrieving', 'require', # AnnotationHub messages
   'snapshot',
   'Attaching',
-  'The following objects',
+  'package',
+  'The following object',
   'Welcome to Bioconductor'
 ), sep = '', collapse = '|')
 
@@ -16,33 +17,34 @@ suppressively <- function(f) {
 with_handlers <- function(code, .logger=NULL, .console=TRUE) {
   messages <- character()
   mHandler <- function(m) {
-    if (grepl(ignored_prefixes, m$message) || trimws(m$message) == "") {
+    m = trimws(m$message)
+    if (grepl(ignored_prefixes, m) ||
+        m == "" || grepl('deprecate', m, ignore.case = T)) {
       return(invokeRestart("muffleMessage"))
     }
-    if (!is.null(.logger)) .logger(m$message)
-    fmt = futile.logger::flog.layout()(futile.logger::INFO, m$message)
+    if (!is.null(.logger)) .logger(m)
+    fmt = futile.logger::flog.layout()(futile.logger::INFO, m)
     if (.console) message(fmt)
     messages <<- c(messages, fmt)
-
+    invokeRestart("muffleMessage")
   }
   warnings <- character()
   wHandler <- function(w) {
-    if (!grepl("^package .* was built under R", w$message)) {
-      if (!is.null(.logger)) .logger(w$message)
-      # if (.console) futile.logger::flog.info(w$message)
+    w = trimws(w$message)
+    if (!is.null(.logger)) .logger(w$message)
+    # if (.console) futile.logger::flog.info(w$message)
 
-      fmt = futile.logger::flog.layout()(futile.logger::WARN, w$message)
-      if (.console) message(fmt)
-      messages <<- c(messages, fmt)
-      # warnings <<- c(warnings, w$message)
-    }
+    fmt = futile.logger::flog.layout()(futile.logger::WARN, w)
+    if (.console) message(fmt)
+    messages <<- c(messages, fmt)
+    # warnings <<- c(warnings, w$message)
     invokeRestart("muffleWarning")
   }
   .add_trace <- function(e) {
     e$trace=capture.output(rlang::trace_back())
     fmt = futile.logger::flog.layout()(futile.logger::FATAL, e$message)
     messages <<- c(messages, fmt)
-    fmt = futile.logger::flog.layout()(futile.logger::FATAL, paste(e$trace, collapse = "\n"))
+    fmt = futile.logger::flog.layout()(futile.logger::FATAL, paste(c("", e$trace), collapse = "\n"))
     messages <<- c(messages, fmt)
     signalCondition(e)
   }
