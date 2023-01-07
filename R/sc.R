@@ -1,11 +1,39 @@
 read_3files <- function(matrix.loc, gene.loc, barcode.loc) {
-  gene.info <- read.delim(gene.loc, header = FALSE, colClasses = "character",
+  tryCatch({
+    gene.info <- read.delim(gene.loc, header = FALSE, colClasses = "character",
     stringsAsFactors = FALSE, quote = "", comment.char = "")
+  }, error=function(x) {
+      stop("Invalid features file. Features file should be a tab-delmited file with 3 columns (or its gz version)")
+    }
+  )
+  if (ncol(gene.info) != 3) {
+    stop("Invalid features file. Features file should be a tab-delmited file with 3 columns (or its gz version)")
+  }
   colnames(gene.info) <- c("ID", "Symbol", "Type")
 
+  tryCatch(
+    { mat = as(Matrix::readMM(matrix.loc), "dgCMatrix") },
+    error=function(x) {
+      stop("Invalid matrix file.")
+    }
+  )
+  barcodes = readLines(barcode.loc)
+  bar_lengths = unique(sapply(barcodes, nchar))
+  if (length(bar_lengths) > 1) {
+    stop("Invalid barcode file. Barcodes should have the same length.")
+  }
+
+  if (bar_lengths > 50) {
+    stop("Invalid barcode file. Barcodes should have be <50 bps.")
+  }
+
+  if ( !all(dim(mat) == c(nrow(gene.info), length(barcodes))) ) {
+    stop("Matrix file does not match features and barcode files: Incompatible dimensions.")
+  }
+
   list(
-    mat = as(Matrix::readMM(matrix.loc), "dgCMatrix"),
-    cell.names = readLines(barcode.loc),
+    mat = mat,
+    cell.names = barcodes,
     gene.info = gene.info
   )
 }
@@ -73,21 +101,21 @@ sc <- funwrapper(function(mat, features, barcodes,
   dimred="PCA", ncomponents=5, top_n_sets=1000,
   idtype='SYM', org='hs', collections='all'
 ) {
-  print("Reading files")
+  message("Reading files")
   sce <- readSce(mat, features, barcodes)
 
-  print("Preprocessing data")
+  message("Preprocessing data")
   # subset the object to keep only spots over tissue
   sce <- scPreprocess(sce, filter_cell=filter_cell, sum=sum,
     detected=detected, mito=mito, hvg=hvg, min_gene_count=min_gene_count) %>%
     runPCA()
 
-  print("Performing FA")
+  message("Performing FA")
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   out = visseFA(sce=sce, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets, org=org)
   out = summarizeFA(out)
   # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
-  print("Serializing Results")
+  message("Serializing Results")
   out$api_version = api_version
   out$method = "SC"
   out
