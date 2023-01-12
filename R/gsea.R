@@ -8,15 +8,22 @@ gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
-  gene_summary = geneSummary(msigdb, names(genelist))
-  if (gene_summary$value[["Used in Analysis"]] == 0) {
-    stop("No genes were mapped. Provided genelist is invalid.")
-  }
+  gene_summary = geneSummary(msigdb, genelist)
 
   message(sprintf(
     "%d out of %d genes provided will be used for the analysis with %d genes not mapped",
     gene_summary$value[["Used in Analysis"]], length(genelist), gene_summary$value[["Not Mapped"]]
   ))
+
+  if (gene_summary$value[["Not Mapped"]] > length(genelist) * 0.9) {
+    stop("More than 90% of genes were not mapped. ",
+      "Please check the provided data matches the selected ID type and organism.")
+  }
+
+  if (gene_summary$value[["Not Mapped"]] > length(genelist) * 0.5) {
+    warning("More than 50% of genes were not mapped. ",
+      "You may need to check the provided data matches the selected ID type and organism.")
+  }
 
   pathways = setNames(lapply(msigdb, GSEABase::geneIds), lapply(msigdb, GSEABase::setName))
   res <- fgsea::fgsea(pathways, genelist, nproc=1)

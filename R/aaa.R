@@ -1,5 +1,5 @@
 ignored_prefixes <- paste("^", c(
-  'WARN',
+  'WARN', 'FATAL',
   "Loading",
   'loading', 'downloading', 'retrieving', 'require', # AnnotationHub messages
   'snapshot',
@@ -43,8 +43,11 @@ with_handlers <- function(code, .logger=NULL, .console=TRUE) {
   .add_trace <- function(e) {
     e$trace=capture.output(rlang::trace_back())
     fmt = futile.logger::flog.layout()(futile.logger::FATAL, e$message)
+    if (.console) message(fmt)
     messages <<- c(messages, fmt)
+
     fmt = futile.logger::flog.layout()(futile.logger::FATAL, paste(c("", e$trace), collapse = "\n"))
+    if (.console) message(fmt)
     messages <<- c(messages, fmt)
     signalCondition(e)
   }

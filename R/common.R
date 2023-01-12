@@ -28,7 +28,8 @@ getCollections <- function(idtype='SYM', org='hs', collections='all') {
 
 getPPI <- function(org="hs") {
   imex_0821 = getdata('imex_0821')
-  ppi = imex_0821[imex_0821$Taxid %in% '9606', ]
+  taxid = c(hs="9606",  mm="10090")[org]
+  ppi = imex_0821[imex_0821$Taxid %in% taxid, ]
 }
 
 geneSummary <- function(msigdb, genes) {
@@ -115,7 +116,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     'words' = words
   )
   if (!is.null(gStats)) {
-    ppi = getPPI(org="hs")
+    ppi = getPPI(org=org)
 
     #compute gene-level stats
     message(sprintf("Computing PPI network for %d genes", length(gStats)))

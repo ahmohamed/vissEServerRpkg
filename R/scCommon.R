@@ -92,14 +92,22 @@ visseFA <- function(sce, msigdb, dimred, ncomponents=15, top_n_sets=1000, cutoff
   }
 
   gene_summary = geneSummary(msigdb, rownames(sce))
-  if (gene_summary$value[["Used in Analysis"]] == 0) {
-    stop("No genes were mapped. Provided genelist is invalid.")
-  }
 
   message(sprintf(
     "%d out of %d genes provided will be used for the analysis with %d genes not mapped",
     gene_summary$value[["Used in Analysis"]], length(rownames(sce)), gene_summary$value[["Not Mapped"]]
   ))
+
+  if (gene_summary$value[["Not Mapped"]] > length(rownames(sce)) * 0.9) {
+    stop("More than 90% of genes were not mapped. ",
+      "Please check the provided data matches the selected ID type and organism.")
+  }
+
+  if (gene_summary$value[["Not Mapped"]] > length(rownames(sce)) * 0.5) {
+    warning("More than 50% of genes were not mapped. ",
+      "You may need to check the provided data matches the selected ID type and organism.")
+  }
+
   pal_fsea <- doFA(sce, msigdb, dimred=dimred, ncomponents=ncomponents)
 
   gene_counts = lapply(GSEABase::geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
