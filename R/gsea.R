@@ -1,5 +1,5 @@
 #' @export
-gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
+gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all', scoretype="std"){
   message(sprintf(
     "Starting GSEA with %d genes, ID type %s, organism %s and collections %s",
     length(genelist), idtype, org, paste(collections, collapse = ", ")
@@ -8,7 +8,7 @@ gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
-  gene_summary = geneSummary(msigdb, genelist)
+  gene_summary = geneSummary(msigdb, names(genelist))
 
   message(sprintf(
     "%d out of %d genes provided will be used for the analysis with %d genes not mapped",
@@ -26,7 +26,7 @@ gsea = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all'){
   }
 
   pathways = setNames(lapply(msigdb, GSEABase::geneIds), lapply(msigdb, GSEABase::setName))
-  res <- fgsea::fgsea(pathways, genelist, nproc=1)
+  res <- fgsea::fgsea(pathways, genelist, nproc=1, scoreType=scoretype)
   res_sig = res[res$padj < 0.05 & !is.na(res$padj) & !is.na(res$pathway), ]
   message(sprintf("Found %d significantly enriched genesets", nrow(res_sig)))
 
