@@ -104,21 +104,13 @@ sc <- funwrapper(function(mat, features, barcodes,
   message("Reading files")
   sce <- readSce(mat, features, barcodes)
 
-  message("Preprocessing data")
-  # subset the object to keep only spots over tissue
-  sce <- scPreprocess(sce, filter_cell=filter_cell, sum=sum,
-    detected=detected, mito=mito, hvg=hvg, min_gene_count=min_gene_count) %>%
-    runPCA()
+  out = scVisse(sce=sce, filter_cell=filter_cell, sum=sum, detected=detected, mito=mito,
+    hvg=hvg, min_gene_count=min_gene_count,
+    dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets,
+    idtype=idtype, org=org, collections=collections)
 
-  message("Performing FA")
-  msigdb = getCollections(idtype=idtype, org=org, collections=collections)
-  out = visseFA(sce=sce, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets, org=org)
-  out = summarizeFA(out)
-  # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
   message("Serializing Results")
   out$api_version = api_version
   out$method = "SC"
   out
-  # lapply(out, jsonlite::toJSON, digits=2)
-  # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
 })

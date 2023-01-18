@@ -23,7 +23,8 @@ Suggests:
   SpatialExperiment,
   Matrix,
   scran, 
-  scater
+  scater,
+  uwot
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

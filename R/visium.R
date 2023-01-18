@@ -52,23 +52,14 @@ visium <- funwrapper(function(h5, tissue_positions,
   message("Reading files")
   spe_raw <- readSpe(h5, tissue_positions)
   xyranges <- list(xcoord=range(spatialCoords(spe_raw)[,1]), ycoord = range(spatialCoords(spe_raw)[,2]))
-
-  message("Preprocessing data")
   # subset the object to keep only spots over tissue
   spe <- spe_raw[, spatialData(spe_raw)$in_tissue]
-  spe <- scPreprocess(spe, filter_cell=filter_cell, sum=sum,
-    detected=detected, mito=mito, hvg=hvg, min_gene_count=min_gene_count) %>%
-    runPCA()
 
-  message("Performing FA")
-  msigdb = getCollections(idtype=idtype, org=org, collections=collections)
-  out = visseFA(sce=spe, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets, org=org)
-  out = summarizeFA(out)
-  # out = readRDS("server/R/robjects/examples/visiumFA.RDS")
-  message("Serializing Results")
-  out$api_version = api_version
+  out = scVisse(sce=spe, filter_cell=filter_cell, sum=sum, detected=detected, mito=mito,
+    hvg=hvg, min_gene_count=min_gene_count,
+    dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets,
+    idtype=idtype, org=org, collections=collections)
+
   out$method = "visium"
   out
-  # lapply(out, jsonlite::toJSON, digits=2)
-  # jsonlite::toJSON(SpatialExperiment:::.read_xyz(tissue_positions), digits=2)
 })

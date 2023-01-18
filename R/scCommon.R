@@ -68,14 +68,22 @@ runPCA <- function(sce, ncomponents = 50){
     genes <- genes[SummarizedExperiment::rowData(sce)$HVG]
   }
 
-  scater::runPCA(sce, ncomponents = 50, subset_row = genes)
+  scater::runPCA(sce, ncomponents = ncomponents, subset_row = genes, name="PCA")
 }
 
 runUMAP <- function(sce){
-  scater::runUMAP(sce, dimred = "PCA")
+  scater::runUMAP(sce, dimred = "PCA", name="UMAP")
 }
 
+runTSNE <- function(sce){
+  scater::runTSNE(sce, dimred = "PCA", name="TSNE")
+}
 
+exportReducedDim = function(sce, name) {
+  df = SingleCellExperiment::reducedDim(sce, name)
+  colnames(df) = paste0(name, 1:ncol(df))
+  df
+}
 
 ## FA
 doFA <- function(sce, gsc, dimred="PCA", ncomponents=15) {
@@ -135,5 +143,36 @@ summarizeFA <- function(fa_results) {
       dplyr::group_by(Cluster) %>%
       dplyr::slice_max(freq, n=20, with_ties = FALSE)
   })
+  out
+}
+
+scVisse = function(sce, filter_cell, sum, detected, mito,
+  hvg, min_gene_count,
+  dimred, ncomponents, top_n_sets,
+  idtype, org, collections) {
+  message("Preprocessing data")
+  sce <- scPreprocess(sce, filter_cell=filter_cell, sum=sum,
+    detected=detected, mito=mito, hvg=hvg, min_gene_count=min_gene_count) %>%
+    runPCA(ncomponents = ncomponents) %>%
+    runUMAP() %>%
+    runTSNE()
+
+  message("Performing FA")
+  msigdb = getCollections(idtype=idtype, org=org, collections=collections)
+  out = visseFA(sce=sce, msigdb=msigdb, dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets, org=org)
+  out = summarizeFA(out)
+
+  dimlist = lapply(SingleCellExperiment::reducedDimNames(sce), function(x) exportReducedDim(sce, x))
+  if (is(sce, 'SpatialExperiment')) {
+    coords = as.data.frame(spatialCoords(sce))
+    colnames(coords) = c("Tissue X", "Tissue Y")
+    dimlist = append(dimlist, coords)
+  }
+
+  qcmetrics = SummarizedExperiment::colData(sce)[, c("sum", "detected", "subsets_Mito_percent")]
+  cellmetrics = as.data.frame(cbind(qcmetrics, dimlist)) %>%
+    dplyr::rename(`Library Size`=sum, `Gene Count`=detected, `% Mitochonrial Genes`=subsets_Mito_percent)
+  rownames(cellmetrics) = NULL
+  out$cellmetrics = as.list(cellmetrics)
   out
 }
