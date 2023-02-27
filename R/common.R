@@ -127,7 +127,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
       tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
       tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
 
-    out$genestats = dplyr::select(p3$data, -rank)
+    out$genestats = p3$data %>% dplyr::arrange(Group, rank) %>% dplyr::select(-rank)
     out$ppi_grps = ppi_grps
   }
 
