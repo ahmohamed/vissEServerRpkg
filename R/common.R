@@ -19,11 +19,50 @@ subsetCollection <- function(gsc, collection = c()) {
 }
 
 getCollections <- function(idtype='SYM', org='hs', collections='all') {
+  if (!idtype %in% c('SYM', 'EZ')) {
+    idtype = 'SYM'
+  }
   msigdb = getdata(paste0(org, '_', idtype))
   if (!'all' %in% collections) {
     msigdb = subsetCollection(msigdb, collections)
   }
   msigdb
+}
+
+handle_ids <- function(ids, msigdb, org, idtype) {
+  if (idtype %in% c('SYM', 'EZ')) {
+    return (ids)
+  }
+
+  sep_groups = data.frame(ids=ids) %>%
+    dplyr::mutate(original_ids=ids) %>%
+    tidyr::separate_rows(ids, sep = ';')
+
+  orgdblist = list(hs=org.Hs.eg.db::org.Hs.eg.db, mm=org.Mm.eg.db::org.Mm.eg.db)
+  symbol_ids = to_symbol(sep_groups$ids, orgdblist[[org]], from = idtype)
+  universe = unique(unlist(GSEABase::geneIds(msigdb)))
+  sep_groups$symbols = symbol_ids[sep_groups$ids]
+  mapped_symbols = sep_groups %>%
+    dplyr::mutate(matched=!is.na(symbols) & symbols %in% universe) %>%
+    dplyr::group_by(original_ids) %>% dplyr::arrange(!matched) %>%
+    dplyr::slice_head(n=1) %>%
+    dplyr::mutate(symbols=dplyr::coalesce(symbols, ids))
+
+  setNames(mapped_symbols$symbols, mapped_symbols$original_ids)
+}
+
+to_symbol <- function(ids, orgdb, from) {
+  if (!is(orgdb, 'OrgDb'))
+    stop('Provide valid organism database')
+
+  #convert numeric IDs to character
+  if (!is.character(ids))
+    ids = as.character(ids)
+
+  #convert types
+  ids = AnnotationDbi::mapIds(orgdb, ids, 'SYMBOL', from, multiVals = 'first')
+
+  return(ids)
 }
 
 getPPI <- function(org="hs") {
@@ -121,14 +160,18 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     #compute gene-level stats
     message(sprintf("Computing PPI network for %d genes", length(gStats)))
     p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
-    ppi_grps = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org) %>%
-      tidygraph::activate(nodes) %>%
-        tidygraph::filter(!is.na(Degree)) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
-      tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
-      tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
-
     out$genestats = p3$data %>% dplyr::arrange(Group, rank) %>% dplyr::select(-rank)
-    out$ppi_grps = ppi_grps
+
+    comp_ppi = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org)
+    if (igraph::ecount(comp_ppi) > 0) {
+      ppi_grps = comp_ppi %>%
+        tidygraph::activate(nodes) %>%
+          tidygraph::filter(!is.na(Degree)) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
+        tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
+        tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
+
+      out$ppi_grps = ppi_grps
+    }
   }
 
   out
