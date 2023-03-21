@@ -123,7 +123,7 @@ sc <- funwrapper(function(mat,
       method = method_filter,
       sum = sum,
       detected = detected,
-      neg = neg
+      neg = mito
     ) |>
     dropLowCount(min_gene_count) |>
     doNormalise(method = method_normalise) |>

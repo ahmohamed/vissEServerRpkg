@@ -14,14 +14,6 @@ readVisiumXY <- function(tissue_positions) {
   return(df)
 }
 
-#read positions for visium
-# readVisiumXY <- function(tissue_positions) {
-#   spd = SpatialExperiment:::.read_xyz(tissue_positions)
-#   colnames(spd)[5:4] = c('x', 'y')
-#
-#   return(spd)
-# }
-
 #read positions for xenium
 readXeniumXY <- function(tissue_positions) {
   spd = read.csv(tissue_positions, header = TRUE, row.names = 1)
@@ -30,7 +22,7 @@ readXeniumXY <- function(tissue_positions) {
   return(spd)
 }
 
-readSpe <- function(hdf5file, positions, tech) {
+readSpe <- function(hdf5file, positions) {
   tryCatch({
     sce = DropletUtils::read10xCounts(samples = hdf5file, sample.names = 'Spatial Sample', col.names = TRUE, type='HDF5')
   }, error=function(x) {
@@ -51,8 +43,9 @@ readSpe <- function(hdf5file, positions, tech) {
   spe = SpatialExperiment::SpatialExperiment(
     assays = SummarizedExperiment::assays(sce),
     rowData = S4Vectors::DataFrame(Symbol = SummarizedExperiment::rowData(sce)$Symbol),
-    sample_id = 'Spatial Sample', spatialData = S4Vectors::DataFrame(positions),
-    spatialCoordsNames = c('x', 'y'))
+    sample_id = 'Spatial Sample',
+    spatialCoords = as.matrix(positions[, c('x', 'y')])
+  )
 
   rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
   spe
@@ -89,11 +82,70 @@ visium <- funwrapper(function(h5,
       method = method_filter,
       sum = sum,
       detected = detected,
-      neg = neg
+      neg = mito
     ) |>
     dropLowCount(min_gene_count) |>
     doNormalise(method = method_normalise) |>
     doSelectFeatures(method = method_features, n = n_features) |>
+    runPCA(ncomponents = 50) |>
+    runNMF(ncomponents = 20) |>
+    runUMAP() |>
+    runTSNE()
+
+  out = scVisseFA(
+    sce = spe,
+    dimred = dimred,
+    ncomponents = ncomponents,
+    top_n_sets = top_n_sets,
+    idtype = idtype,
+    org = org,
+    collections = collections
+  )
+
+  message('Serializing Results')
+  out$api_version = api_version
+  out$method = 'Visium'
+  out
+})
+
+#----xenium----
+#' @export
+xenium <- funwrapper(function(h5,
+                              tissue_positions,
+                              method_filter = 'fixed',
+                              method_normalise = 'none',
+                              method_features = 'all',
+                              sum = 10,
+                              detected = 10,
+                              neg = 5,
+                              neg_regex = '^BLANK|^NegControl',
+                              min_gene_count = 0,
+                              dimred = 'PCA',
+                              ncomponents = 5,
+                              top_n_sets = 1000,
+                              idtype = 'SYM',
+                              org = 'mm',
+                              collections = 'all') {
+  message('Reading files')
+  pos = readXeniumXY(tissue_positions)
+  spe = readSpe(h5, pos)
+
+  message('Preprocessing data')
+  spe = spe |>
+    addQC(neg_regex = neg_regex) |>
+    filterCells(
+      method = method_filter,
+      sum = sum,
+      detected = detected,
+      neg = neg
+    ) |>
+    dropLowCount(min_gene_count)
+
+  #drop control probes
+  spe = spe[!grepl(neg_regex, rownames(spe)), ]
+  spe = spe |>
+    doNormalise(method = method_normalise) |>
+    doSelectFeatures(method = method_features) |>
     runPCA(ncomponents = 50) |>
     runNMF(ncomponents = 20) |>
     runUMAP() |>
