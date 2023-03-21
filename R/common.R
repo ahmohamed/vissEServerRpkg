@@ -53,6 +53,9 @@ to_symbol <- function(ids, orgdb, from) {
   if (!is(orgdb, 'OrgDb'))
     stop('Provide valid organism database')
 
+  if (!any(ids %in% AnnotationDbi::keys(orgdb, from)))
+    stop(sprintf('None of the "%s" IDs are valid', from))
+
   #convert numeric IDs to character
   if (!is.character(ids))
     ids = as.character(ids)
