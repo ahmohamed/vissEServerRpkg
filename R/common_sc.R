@@ -189,7 +189,11 @@ runNMF <- function(sce, ncomponents = 5) {
     name = 'NMF',
     exprs_values = 'logcounts'
   )
+
+  #add names
   colnames(SingleCellExperiment::reducedDim(sce, 'NMF')) = paste0('NMF', seq(ncomponents))
+  colnames(attr(SingleCellExperiment::reducedDim(sce, 'NMF'), 'basis')) = paste0('NMF', seq(ncomponents))
+  rownames(attr(SingleCellExperiment::reducedDim(sce, 'NMF'), 'basis')) = rownames(sce)[SummarizedExperiment::rowData(sce)$UseGenes]
 
   return(sce)
 }
