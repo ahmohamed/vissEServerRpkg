@@ -1,4 +1,4 @@
-#' @importFrom magrittr %>%
+#' @importFrom magrittr |>
 
 api_version = 0.1
 
@@ -34,18 +34,18 @@ handle_ids <- function(ids, msigdb, org, idtype) {
     return (ids)
   }
 
-  sep_groups = data.frame(ids=ids) %>%
-    dplyr::mutate(original_ids=ids) %>%
+  sep_groups = data.frame(ids=ids) |>
+    dplyr::mutate(original_ids=ids) |>
     tidyr::separate_rows(ids, sep = ';')
 
   orgdblist = list(hs=org.Hs.eg.db::org.Hs.eg.db, mm=org.Mm.eg.db::org.Mm.eg.db)
   symbol_ids = to_symbol(sep_groups$ids, orgdblist[[org]], from = idtype)
   universe = unique(unlist(GSEABase::geneIds(msigdb)))
   sep_groups$symbols = symbol_ids[sep_groups$ids]
-  mapped_symbols = sep_groups %>%
-    dplyr::mutate(matched=!is.na(symbols) & symbols %in% universe) %>%
-    dplyr::group_by(original_ids) %>% dplyr::arrange(!matched) %>%
-    dplyr::slice_head(n=1) %>%
+  mapped_symbols = sep_groups |>
+    dplyr::mutate(matched=!is.na(symbols) & symbols %in% universe) |>
+    dplyr::group_by(original_ids) |> dplyr::arrange(!matched) |>
+    dplyr::slice_head(n=1) |>
     dplyr::mutate(symbols=dplyr::coalesce(symbols, ids))
 
   setNames(mapped_symbols$symbols, mapped_symbols$original_ids)
@@ -81,12 +81,12 @@ geneSummary <- function(msigdb, genes) {
 
 genesetSummary <- function(msigdb, out) {
   nodes = dplyr::ungroup(out$nodes)
-  geneset_stats = nodes %>% dplyr::summarise(
+  geneset_stats = nodes |> dplyr::summarise(
     "Significant Genesets"=dplyr::n(), "Categories"=dplyr::n_distinct(Category),
     "Subcategories"=dplyr::n_distinct(SubCategory), "Average Geneset Size"=mean(Size, na.rm=T),
     "Geneset Clusters"=dplyr::n_distinct(Cluster)
-  ) %>% unlist() %>% floor()
-  avg_cluster_size = nodes %>% dplyr::group_by(Cluster) %>% dplyr::count() %>% dplyr::pull(n) %>% mean(na.rm=T) %>% floor()
+  ) |> unlist() |> floor()
+  avg_cluster_size = nodes |> dplyr::group_by(Cluster) |> dplyr::count() |> dplyr::pull(n) |> mean(na.rm=T) |> floor()
 
   stats = as.list(c(
     "Tested Genesets"=length(msigdb),
@@ -96,8 +96,8 @@ genesetSummary <- function(msigdb, out) {
 
   list(
     stats=tibble::tibble(stat=names(stats), value=stats),
-    category_tally = nodes %>% dplyr::group_by(Category) %>% dplyr::summarise(count=dplyr::n()),
-    subcategory_tally = nodes %>% dplyr::group_by(Category, SubCategory) %>% dplyr::summarise(count=dplyr::n())
+    category_tally = nodes |> dplyr::group_by(Category) |> dplyr::summarise(count=dplyr::n()),
+    subcategory_tally = nodes |> dplyr::group_by(Category, SubCategory) |> dplyr::summarise(count=dplyr::n())
   )
 }
 
@@ -137,7 +137,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   igraph::V(gs_ovnet)$label = igraph::V(gs_ovnet)$name
   igraph::V(gs_ovnet)$name = 1:igraph::vcount(gs_ovnet)
   igraph::V(gs_ovnet)$degree = igraph::degree(gs_ovnet)
-  vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices') %>%
+  vertices_df = igraph::as_data_frame(gs_ovnet, 'vertices') |>
     dplyr::mutate(SubCategory = dplyr::coalesce(SubCategory, Category))
   if (!is.null(gset_attrs)) {
     vertices_df = dplyr::left_join(vertices_df, gset_attrs, by=c("label"="ID"))
@@ -160,15 +160,15 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     #compute gene-level stats
     message(sprintf("Computing PPI network for %d genes", length(gStats)))
     p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
-    out$genestats = p3$data %>% dplyr::arrange(Group, rank) %>% dplyr::select(-rank)
+    out$genestats = p3$data |> dplyr::arrange(Group, rank) |> dplyr::select(-rank)
 
     comp_ppi = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org)
     if (igraph::ecount(comp_ppi) > 0) {
-      ppi_grps = comp_ppi %>%
-        tidygraph::activate(nodes) %>%
-          tidygraph::filter(!is.na(Degree)) %>% tidygraph::select(group=Group, val=Degree, name=label) %>%
-        tidygraph::activate(edges) %>% tidygraph::select(from, to, inferred=Inferred) %>%
-        tidygraph::to_split(group, split_by = 'nodes') %>% lapply(as.list) %>% setNames(NULL)
+      ppi_grps = comp_ppi |>
+        tidygraph::activate(nodes) |>
+          tidygraph::filter(!is.na(Degree)) |> tidygraph::select(group=Group, val=Degree, name=label) |>
+        tidygraph::activate(edges) |> tidygraph::select(from, to, inferred=Inferred) |>
+        tidygraph::to_split(group, split_by = 'nodes') |> lapply(as.list) |> setNames(NULL)
 
       out$ppi_grps = ppi_grps
     }
