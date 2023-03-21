@@ -39,7 +39,7 @@ read_3files <- function(matrix.loc, gene.loc, barcode.loc) {
 }
 
 sc10x <- function (mat, features, barcodes, col.names = TRUE) {
-  sample.names <- list("Sample")
+  sample.names = list("Sample")
   # load.out <- DropletUtils:::.read_from_hdf5(h5, genome = genome, version = 'auto')
   load.out <- list(read_3files(mat, features, barcodes))
 
@@ -78,6 +78,7 @@ sc10x <- function (mat, features, barcodes, col.names = TRUE) {
 }
 
 readSce <- function(mat, features, barcodes, annot = NULL){
+  set.seed(1234)
   sce <- sc10x(mat, features, barcodes, col.names = TRUE)
 
   #add gene annotations
@@ -85,9 +86,9 @@ readSce <- function(mat, features, barcodes, annot = NULL){
   ah <- AnnotationHub::AnnotationHub()
 
   # TODO: mm annotations
-  ensdb  <-  ah[['AH89426']] # Ensembl 103 EnsDb for Homo sapiens
-  SummarizedExperiment::rowData(sce)$Chr  <-  AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'SEQNAME')
-  SummarizedExperiment::rowData(sce)$Biotype  <-  AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'GENEBIOTYPE')
+  ensdb <- ah[['AH89426']] # Ensembl 103 EnsDb for Homo sapiens
+  SummarizedExperiment::rowData(sce)$Chr <- AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'SEQNAME')
+  SummarizedExperiment::rowData(sce)$Biotype <- AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'GENEBIOTYPE')
 
   # change names to Symbol
   rownames(sce) <- SummarizedExperiment::rowData(sce)$Symbol
@@ -95,19 +96,52 @@ readSce <- function(mat, features, barcodes, annot = NULL){
 }
 
 #' @export
-sc <- funwrapper(function(mat, features, barcodes,
-  filter_cell = "adaptive", sum=NULL, detected=NULL, mito=NULL,
-  hvg=2000, min_gene_count = 0,
-  dimred="PCA", ncomponents=5, top_n_sets=1000,
-  idtype='SYM', org='hs', collections='all'
-) {
+sc <- funwrapper(function(mat,
+                          features,
+                          barcodes,
+                          method_filter = 'adaptive',
+                          method_normalise = 'scran',
+                          method_features = 'HVG',
+                          sum = 1000,
+                          detected = 300,
+                          mito = 10,
+                          n_features = 2000,
+                          min_gene_count = 0,
+                          dimred = 'PCA',
+                          ncomponents = 5,
+                          top_n_sets = 1000,
+                          idtype = 'SYM',
+                          org = 'hs',
+                          collections = 'all') {
   message("Reading files")
-  sce <- readSce(mat, features, barcodes)
+  sce = readSce(mat, features, barcodes)
 
-  out = scVisse(sce=sce, filter_cell=filter_cell, sum=sum, detected=detected, mito=mito,
-    hvg=hvg, min_gene_count=min_gene_count,
-    dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets,
-    idtype=idtype, org=org, collections=collections)
+  message('Preprocessing data')
+  sce = sce |>
+    addQC() |>
+    filterCells(
+      method = method_filter,
+      sum = sum,
+      detected = detected,
+      neg = neg
+    ) |>
+    dropLowCount(min_gene_count) |>
+    doNormalise(method = method_normalise) |>
+    doSelectFeatures(method = method_features, n = n_features) |>
+    runPCA(ncomponents = 50) |>
+    runNMF(ncomponents = 20) |>
+    runUMAP() |>
+    runTSNE()
+
+  out = scVisseFA(
+    sce = sce,
+    dimred = dimred,
+    ncomponents = ncomponents,
+    top_n_sets = top_n_sets,
+    idtype = idtype,
+    org = org,
+    collections = collections
+  )
 
   message("Serializing Results")
   out$api_version = api_version
