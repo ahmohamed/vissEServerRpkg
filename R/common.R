@@ -1,5 +1,3 @@
-#' @importFrom magrittr |>
-
 api_version = 0.1
 
 getdata <- function(x) {

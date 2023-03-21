@@ -1,65 +1,116 @@
 #' @import SpatialExperiment
 
-read_tissue_positions <- function(tissue_positions) {
+readVisiumXY <- function(tissue_positions) {
   df <- read.csv(tissue_positions, header = FALSE, row.names = 1)
   if (ncol(df) != 5) {
     stop("Invalid tissue_positions file. ",
-      "This should be a CSV file with 6 columns")
+         "This should be a CSV file with 6 columns")
   }
   colnames(df) <- c("in_tissue", "array_row", "array_col",
-    "pxl_col_in_fullres", "pxl_row_in_fullres")
+                    "y", "x")
 
   df$in_tissue <- as.logical(df$in_tissue)
-  df
+
+  return(df)
 }
 
-readSpe <- function(hdf5file, tissue_positions, name="Visium Sample") {
+#read positions for visium
+# readVisiumXY <- function(tissue_positions) {
+#   spd = SpatialExperiment:::.read_xyz(tissue_positions)
+#   colnames(spd)[5:4] = c('x', 'y')
+#
+#   return(spd)
+# }
+
+#read positions for xenium
+readXeniumXY <- function(tissue_positions) {
+  spd = read.csv(tissue_positions, header = TRUE, row.names = 1)
+  colnames(spd)[1:2] = c('x', 'y')
+
+  return(spd)
+}
+
+readSpe <- function(hdf5file, positions, tech) {
   tryCatch({
-    sce <- DropletUtils::read10xCounts(samples = hdf5file, sample.names = name, col.names = TRUE, type="HDF5")
+    sce = DropletUtils::read10xCounts(samples = hdf5file, sample.names = 'Spatial Sample', col.names = TRUE, type='HDF5')
   }, error=function(x) {
-    stop("Could not read H5 file.")
+    stop('Could not read H5 file.')
   })
 
-  spd <- SpatialExperiment:::.read_xyz(tissue_positions)
-  if (ncol(sce) != nrow(spd)) {
-    warning("Data file does not match tissue position file: Incompatible dimensions.")
+  if (ncol(sce) != nrow(positions)) {
+    warning('Data file does not match tissue position file: Incompatible dimensions.')
   }
 
-  obs <- intersect(colnames(sce), rownames(spd))
+  obs = intersect(colnames(sce), rownames(positions))
   if (length(obs) < 100) {
     stop('There are less than 100 tissue positions with valid data.')
   }
 
-  sce <- sce[, obs]
-  spd <- spd[obs, ]
+  sce = sce[, obs]
+  positions = positions[obs, ]
   spe = SpatialExperiment::SpatialExperiment(
     assays = SummarizedExperiment::assays(sce),
     rowData = S4Vectors::DataFrame(Symbol = SummarizedExperiment::rowData(sce)$Symbol),
-    sample_id = name, spatialData = S4Vectors::DataFrame(spd),
-    spatialCoordsNames = c("pxl_col_in_fullres", "pxl_row_in_fullres"))
+    sample_id = 'Spatial Sample', spatialData = S4Vectors::DataFrame(positions),
+    spatialCoordsNames = c('x', 'y'))
 
-  rownames(spe) <- SummarizedExperiment::rowData(spe)$Symbol
+  rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
   spe
 }
 
+#----visium----
 #' @export
-visium <- funwrapper(function(h5, tissue_positions,
-  filter_cell = "adaptive", sum=NULL, detected=NULL, mito=NULL,
-  hvg=2000, min_gene_count = 0,
-  dimred="PCA", ncomponents=5, top_n_sets=1000,
-  idtype='SYM', org='hs', collections='all'
-) {
-  message("Reading files")
-  spe_raw <- readSpe(h5, tissue_positions)
-  xyranges <- list(xcoord=range(spatialCoords(spe_raw)[,1]), ycoord = range(spatialCoords(spe_raw)[,2]))
+visium <- funwrapper(function(h5,
+                              tissue_positions,
+                              method_filter = 'adaptive',
+                              method_normalise = 'scran',
+                              method_features = 'HVG',
+                              sum = 1000,
+                              detected = 300,
+                              mito = 10,
+                              n_features = 2000,
+                              min_gene_count = 0,
+                              dimred = 'PCA',
+                              ncomponents = 5,
+                              top_n_sets = 1000,
+                              idtype = 'SYM',
+                              org = 'hs',
+                              collections = 'all') {
+  message('Reading files')
+  pos = readVisiumXY(tissue_positions)
+  spe = readSpe(h5, pos)
   # subset the object to keep only spots over tissue
-  spe <- spe_raw[, spatialData(spe_raw)$in_tissue]
+  spe = spe[, spatialData(spe)$in_tissue]
 
-  out = scVisse(sce=spe, filter_cell=filter_cell, sum=sum, detected=detected, mito=mito,
-    hvg=hvg, min_gene_count=min_gene_count,
-    dimred=dimred, ncomponents=ncomponents, top_n_sets=top_n_sets,
-    idtype=idtype, org=org, collections=collections)
+  message('Preprocessing data')
+  spe = spe |>
+    addQC() |>
+    filterCells(
+      method = method_filter,
+      sum = sum,
+      detected = detected,
+      neg = neg
+    ) |>
+    dropLowCount(min_gene_count) |>
+    doNormalise(method = method_normalise) |>
+    doSelectFeatures(method = method_features, n = n_features) |>
+    runPCA(ncomponents = 50) |>
+    runNMF(ncomponents = 20) |>
+    runUMAP() |>
+    runTSNE()
 
-  out$method = "visium"
+  out = scVisseFA(
+    sce = spe,
+    dimred = dimred,
+    ncomponents = ncomponents,
+    top_n_sets = top_n_sets,
+    idtype = idtype,
+    org = org,
+    collections = collections
+  )
+
+  message('Serializing Results')
+  out$api_version = api_version
+  out$method = 'Visium'
   out
 })
