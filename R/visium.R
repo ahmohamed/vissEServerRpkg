@@ -69,6 +69,7 @@ visium <- funwrapper(function(h5,
                               idtype = 'SYM',
                               org = 'hs',
                               collections = 'all') {
+  set.seed(1234)
   message('Reading files')
   pos = readVisiumXY(tissue_positions)
   spe = readSpe(h5, pos)
@@ -104,7 +105,7 @@ visium <- funwrapper(function(h5,
 
   message('Serializing Results')
   out$api_version = api_version
-  out$method = 'Visium'
+  out$method = 'visium'
   out
 })
 
@@ -126,6 +127,7 @@ xenium <- funwrapper(function(h5,
                               idtype = 'SYM',
                               org = 'mm',
                               collections = 'all') {
+  set.seed(1234)
   message('Reading files')
   pos = readXeniumXY(tissue_positions)
   spe = readSpe(h5, pos)
@@ -163,6 +165,6 @@ xenium <- funwrapper(function(h5,
 
   message('Serializing Results')
   out$api_version = api_version
-  out$method = 'Visium'
+  out$method = 'xenium'
   out
 })

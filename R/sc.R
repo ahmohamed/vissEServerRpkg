@@ -78,17 +78,11 @@ sc10x <- function (mat, features, barcodes, col.names = TRUE) {
 }
 
 readSce <- function(mat, features, barcodes, annot = NULL){
-  set.seed(1234)
   sce <- sc10x(mat, features, barcodes, col.names = TRUE)
 
   #add gene annotations
   AnnotationHub::setAnnotationHubOption("ASK", FALSE)
   ah <- AnnotationHub::AnnotationHub()
-
-  # TODO: mm annotations
-  ensdb <- ah[['AH89426']] # Ensembl 103 EnsDb for Homo sapiens
-  SummarizedExperiment::rowData(sce)$Chr <- AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'SEQNAME')
-  SummarizedExperiment::rowData(sce)$Biotype <- AnnotationDbi::mapIds(ensdb, rownames(sce), keytype = 'GENEID', column = 'GENEBIOTYPE')
 
   # change names to Symbol
   rownames(sce) <- SummarizedExperiment::rowData(sce)$Symbol
@@ -113,6 +107,7 @@ sc <- funwrapper(function(mat,
                           idtype = 'SYM',
                           org = 'hs',
                           collections = 'all') {
+  set.seed(1234)
   message("Reading files")
   sce = readSce(mat, features, barcodes)
 
