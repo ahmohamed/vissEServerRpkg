@@ -116,45 +116,6 @@ feature_HVGs <- function(sce, n = 2000) {
   return(sce)
 }
 
-feature_sparkX <- function(spe, p = 0.1) {
-  stopifnot(is(spe, 'SpatialExperiment'))
-
-  ## filter genes and cells/spots and
-  locs = SpatialExperiment::spatialCoords(spe) |> as.data.frame()
-  rownames(locs) = colnames(spe)
-
-  spark = SPARK::CreateSPARKObject(
-    counts = SingleCellExperiment::counts(spe),
-    location = locs,
-    percentage = p,
-    min_total_counts = 10
-  )
-
-  ## total counts for each cell/spot
-  spark@lib_size = apply(spark@counts, 2, sum)
-
-  ## Estimating Parameter Under Null
-  spark = SPARK::spark.vc(
-    spark,
-    covariates = NULL,
-    lib_size = spark@lib_size,
-    num_core = 1,
-    verbose = FALSE
-  )
-
-  ## Calculating pval
-  spark = SPARK::spark.test(spark,
-                            check_positive = T,
-                            verbose = FALSE)
-
-  #subset
-  svgs = spark@res_mtest
-  svgs = rownames(svgs)[svgs$adjusted_pvalue < 0.1]
-  SingleCellExperiment::rowSubset(spe, 'UseGenes') = svgs
-
-  return(spe)
-}
-
 feature_all <- function(sce) {
   SingleCellExperiment::rowSubset(sce, 'UseGenes') = rownames(sce)
 
