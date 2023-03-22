@@ -79,67 +79,7 @@ sc10x <- function (mat, features, barcodes, col.names = TRUE) {
 
 readSce <- function(mat, features, barcodes, annot = NULL){
   sce <- sc10x(mat, features, barcodes, col.names = TRUE)
-
-  #add gene annotations
-  AnnotationHub::setAnnotationHubOption("ASK", FALSE)
-  ah <- AnnotationHub::AnnotationHub()
-
   # change names to Symbol
   rownames(sce) <- SummarizedExperiment::rowData(sce)$Symbol
   sce
 }
-
-#' @export
-sc <- funwrapper(function(mat,
-                          features,
-                          barcodes,
-                          method_filter = 'adaptive',
-                          method_normalise = 'scran',
-                          method_features = 'HVG',
-                          sum = 1000,
-                          detected = 300,
-                          mito = 10,
-                          n_features = 2000,
-                          min_gene_count = 0,
-                          dimred = 'PCA',
-                          ncomponents = 5,
-                          top_n_sets = 1000,
-                          idtype = 'SYM',
-                          org = 'hs',
-                          collections = 'all') {
-  set.seed(1234)
-  message("Reading files")
-  sce = readSce(mat, features, barcodes)
-
-  message('Preprocessing data')
-  sce = sce |>
-    addQC() |>
-    filterCells(
-      method = method_filter,
-      sum = sum,
-      detected = detected,
-      neg = mito
-    ) |>
-    dropLowCount(min_gene_count) |>
-    doNormalise(method = method_normalise) |>
-    doSelectFeatures(method = method_features, n = n_features) |>
-    runPCA(ncomponents = 50) |>
-    runNMF(ncomponents = 20) |>
-    runUMAP() |>
-    runTSNE()
-
-  out = scVisseFA(
-    sce = sce,
-    dimred = dimred,
-    ncomponents = ncomponents,
-    top_n_sets = top_n_sets,
-    idtype = idtype,
-    org = org,
-    collections = collections
-  )
-
-  message("Serializing Results")
-  out$api_version = api_version
-  out$method = "SC"
-  out
-})

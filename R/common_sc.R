@@ -71,6 +71,18 @@ dropLowCount <- function(sce, lower = 0){
   sce[scuttle::perFeatureQCMetrics(sce)$detected > lower, ]
 }
 
+dropNeg <- function(sce, neg_regex = '(^MT-)|(^mt-)') {
+  # get negative control genes (e.g., neg probes and mito)
+  is_neg = grepl(neg_regex, SummarizedExperiment::rowData(sce)$Symbol)
+
+  #use Chr if present
+  if (!is.null(SummarizedExperiment::rowData(sce)$Chr)) {
+    is_neg = is_neg | SummarizedExperiment::rowData(sce)$Chr %in% c('MT', 'mt')
+  }
+
+  sce[!is_neg, ]
+}
+
 #----normalisation----
 normalise_none <- function(sce) {
   SingleCellExperiment::logcounts(sce) = log2(SingleCellExperiment::counts(sce) + 1)
@@ -277,7 +289,7 @@ scVisseFA = function(sce,
                      idtype,
                      org,
                      collections) {
-  message('Performing FA')
+  message('Performing factor interpretation')
   msigdb = getCollections(idtype = idtype,
                           org = org,
                           collections = collections)
@@ -304,7 +316,7 @@ scVisseFA = function(sce,
     dplyr::rename(
       `Library Size` = sum,
       `Gene Count` = detected,
-      `% Mitochonrial Genes` = subsets_Neg_percent
+      `% Control/Mito Genes` = subsets_Neg_percent
     )
   rownames(cellmetrics) = NULL
   out$cellmetrics = as.list(cellmetrics)
