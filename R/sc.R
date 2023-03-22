@@ -1,3 +1,4 @@
+#----single-cell readers----
 read_3files <- function(matrix.loc, gene.loc, barcode.loc) {
   tryCatch({
     gene.info <- read.delim(gene.loc, header = FALSE, colClasses = "character",
@@ -82,4 +83,97 @@ readSce <- function(mat, features, barcodes, annot = NULL){
   # change names to Symbol
   rownames(sce) <- SummarizedExperiment::rowData(sce)$Symbol
   sce
+}
+
+#' @import SpatialExperiment
+
+#----spatial readers----
+readVisiumXY <- function(tissue_positions) {
+  df <- read.csv(tissue_positions, header = FALSE, row.names = 1)
+  if (ncol(df) != 5) {
+    stop("Invalid tissue_positions file. ",
+         "This should be a CSV file with 6 columns")
+  }
+  colnames(df) <- c("in_tissue", "array_row", "array_col",
+                    "y", "x")
+
+  df$in_tissue <- as.logical(df$in_tissue)
+
+  return(df)
+}
+
+#read positions for xenium
+readXeniumXY <- function(tissue_positions) {
+  spd = read.csv(tissue_positions, header = TRUE, row.names = 1)
+  colnames(spd)[1:2] = c('x', 'y')
+
+  return(spd)
+}
+
+#read positions for cosmx
+readCosMx <- function(exprmat, metadata) {
+  annots = read.csv(metadata, header = TRUE)
+  colnames(annots)[7:8] = c('x', 'y')
+  emat = read.csv(exprmat, header = TRUE)
+  emat = emat[emat$cell_ID > 0, ]
+
+  #add unique cell IDs
+  rownames(emat) = paste(emat$fov, emat$cell_ID, sep = '_')
+  rownames(annots) = paste(annots$fov, annots$cell_ID, sep = '_')
+  emat = t(emat[, -(1:2)])
+
+  if(!all(colnames(emat) %in% rownames(annots))) {
+    stop('Annotations do not match the data.')
+  }
+
+  if (ncol(emat) != nrow(annots)) {
+    warning('Data file does not match tissue position file: Incompatible dimensions.')
+  }
+
+  obs = intersect(colnames(emat), rownames(annots))
+  if (length(obs) < 100) {
+    stop('There are less than 100 tissue positions with valid data.')
+  }
+
+  emat = emat[, obs]
+  annots = annots[obs, ]
+  spe = SpatialExperiment::SpatialExperiment(
+    assays = list('counts' = emat),
+    colData = as(annots, 'DataFrame'),
+    rowData = S4Vectors::DataFrame(Symbol = rownames(emat)),
+    sample_id = 'Spatial Sample',
+    spatialCoordsNames = c('x', 'y')
+  )
+
+  rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
+  spe
+}
+
+readSpe <- function(hdf5file, positions) {
+  tryCatch({
+    sce = DropletUtils::read10xCounts(samples = hdf5file, sample.names = 'Spatial Sample', col.names = TRUE, type='HDF5')
+  }, error=function(x) {
+    stop('Could not read H5 file.')
+  })
+
+  if (ncol(sce) != nrow(positions)) {
+    warning('Data file does not match tissue position file: Incompatible dimensions.')
+  }
+
+  obs = intersect(colnames(sce), rownames(positions))
+  if (length(obs) < 100) {
+    stop('There are less than 100 tissue positions with valid data.')
+  }
+
+  sce = sce[, obs]
+  positions = positions[obs, ]
+  spe = SpatialExperiment::SpatialExperiment(
+    assays = SummarizedExperiment::assays(sce),
+    rowData = S4Vectors::DataFrame(Symbol = SummarizedExperiment::rowData(sce)$Symbol),
+    sample_id = 'Spatial Sample',
+    spatialCoords = as.matrix(positions[, c('x', 'y')])
+  )
+
+  rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
+  spe
 }
