@@ -22,7 +22,6 @@
 
 on:
   push:
-  pull_request:
 
 name: BiocCheck
 
@@ -45,8 +44,14 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: What
-        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ahmohamed/visse_server_rpkg
+          tags: |
+            type=ref,event=branch
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -60,6 +65,4 @@ jobs:
         if: "!contains(github.event.head_commit.message, '/nodocker') && env.run_docker == 'true' && runner.os == 'Linux' && matrix.config.r != 'devel'"
         with:
           push: true
-          tags: ahmohamed/visse_server_rpkg:${{ env.BRANCH }}
-          build-args: |
-            BRANCH=${{ env.BRANCH }}
+          tags: ${{ steps.meta.outputs.tags }}
