@@ -8,7 +8,7 @@ ora = funwrapper(function(genelist, idtype='SYM', org='hs', collections='all') {
   msigdb = getCollections(idtype=idtype, org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
-  genelist = handle_ids(ids=genelist, msigdb=msigdb, org=org, idtype=idtype)
+  genelist = handle_ids(ids=unlist(genelist), msigdb=msigdb, org=org, idtype=idtype)
   genelist = genelist[!duplicated(genelist)]
 
   gene_summary = geneSummary(msigdb, genelist)
