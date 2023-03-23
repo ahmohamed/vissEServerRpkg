@@ -31,7 +31,7 @@ getCollections <- function(idtype='SYM', org='hs', collections='all') {
 
 handle_ids <- function(ids, msigdb, org, idtype) {
   if (idtype %in% c('SYM', 'EZ')) {
-    return (ids)
+    return (setNames(ids, ids))
   }
 
   sep_groups = data.frame(ids=ids) %>%
