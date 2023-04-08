@@ -1,4 +1,4 @@
-xenium_example = cellular(
+xenium_example = cellular(.silent=FALSE, 
   expr = "data-raw/xenium/cell_feature_matrix.h5",
   tissue_positions = "data-raw/xenium/cells.csv",
   tech = 'xenium',

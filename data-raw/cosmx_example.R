@@ -1,4 +1,4 @@
-cosmx_example = cellular(
+cosmx_example = cellular(.silent=FALSE, 
   expr = "data-raw/cosmx/Lung5_Rep3_exprMat_file.csv.gz",
   tissue_positions = "data-raw/cosmx/Lung5_Rep3_metadata_file.csv",
   tech = 'cosmx',

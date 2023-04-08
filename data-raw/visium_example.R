@@ -1,4 +1,4 @@
-visium_example = cellular(
+visium_example = cellular(.silent=FALSE,
   expr = "data-raw/visium/raw_feature_bc_matrix.h5",
   tissue_positions = "data-raw/visium/tissue_positions_list.csv",
   tech = 'visium',

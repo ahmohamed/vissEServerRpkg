@@ -1,4 +1,4 @@
-sc_example = cellular(
+sc_example = cellular(.silent=FALSE, 
   expr = "data-raw/sc/matrix.mtx.gz",
   features = "data-raw/sc/features.tsv.gz",
   barcodes = "data-raw/sc/barcodes.tsv",

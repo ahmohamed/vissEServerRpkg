@@ -14,7 +14,7 @@ suppressively <- function(f) {
 }
 
 
-with_handlers <- function(code, .logger=NULL, .console=TRUE) {
+with_handlers <- function(code, .logger=NULL, .console=TRUE, .silent=.silent) {
   messages <- character()
   mHandler <- function(m) {
     m = trimws(m$message)
@@ -69,6 +69,7 @@ with_handlers <- function(code, .logger=NULL, .console=TRUE) {
     list(result = result, output = output, warnings = warnings, messages = messages, error=NULL)
   },
     error = function(e){
+      if (!.silent) stop(e)
       output <- paste0(readLines(temp, warn = FALSE), collapse = "\n")
       list(
         result = NULL, output = output, warnings = warnings, messages = messages,
@@ -79,15 +80,15 @@ with_handlers <- function(code, .logger=NULL, .console=TRUE) {
 }
 
 safely2 <- function(f) {
-  function(..., .logger=.logger, .console=TRUE) with_handlers(f(...), .logger=.logger, .console=.console)
+  function(..., .logger=.logger, .console=TRUE, .silent=.silent) with_handlers(f(...), .logger=.logger, .console=.console, .silent=.silent)
 }
 
 funwrapper <- function(f) {
-  return (function(..., .logger=NULL, .console=TRUE, .nowrap=FALSE) {
+  return (function(..., .logger=NULL, .console=TRUE, .nowrap=FALSE, .silent=TRUE) {
     if (.nowrap) {
       return(f(...))
     }
-    res <- safely2(f)(..., .logger=.logger, .console=.console)
+    res <- safely2(f)(..., .logger=.logger, .console=.console, .silent=.silent)
     jsonlite::toJSON(res, digits=2)
   })
 }
