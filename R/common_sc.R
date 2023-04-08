@@ -179,10 +179,13 @@ runTSNE <- function(sce) {
   scater::runTSNE(sce, dimred = 'PCA', name = 'TSNE')
 }
 
-exportReducedDim = function(sce, name) {
+exportReducedDim = function(sce, name, ncomponents) {
   df = SingleCellExperiment::reducedDim(sce, name)
   colnames(df) = paste0(name, 1:ncol(df))
-  df
+  if (ncomponents > ncol(df)) {
+    ncomponents = ncol(df)
+  }
+  df[, 1:ncomponents]
 }
 
 #----clustering----
@@ -304,7 +307,7 @@ scVisseFA = function(sce,
   out = summarizeFA(out)
 
   dimlist = lapply(SingleCellExperiment::reducedDimNames(sce), function(x)
-    exportReducedDim(sce, x))
+    exportReducedDim(sce, name = x, ncomponents = ncomponents))
   if (is(sce, 'SpatialExperiment')) {
     coords = as.data.frame(spatialCoords(sce))
     colnames(coords) = c('Tissue X', 'Tissue Y')
