@@ -36,6 +36,16 @@ cellular <- funwrapper(function(expr,
   method_normalise = match.arg(method_normalise)
   method_features = match.arg(method_features)
   dimred_fa = match.arg(dimred_fa)
+  
+  if (dimred_fa == 'PCA' ||'UMAP' %in% dimred || 'TSNE' %in% dimred) {
+    if (!'PCA' %in% dimred) {
+      dimred = c('PCA', dimred)
+    }
+  }
+
+  if (dimred_fa == 'NMF' && !'NMF' %in% dimred) {
+      dimred = c('NMF', dimred)
+  }
 
   # read files
   message('Reading files')
@@ -64,20 +74,20 @@ cellular <- funwrapper(function(expr,
   }
 
   # Check gene mapping and fail fast if there are issues.
-  msigdb = getCollections(idtype = idtype, org = org, collections = collections)
-  gene_summary = geneSummary(msigdb, rownames(sce))
+  msigdb = getCollections(idtype = 'SYM', org = org, collections = collections)
+  gene_summary = geneSummary(msigdb, rownames(spe))
 
   message(sprintf(
     '%d out of %d genes provided will be used for the analysis with %d genes not mapped',
-    gene_summary$value[['Used in Analysis']], length(rownames(sce)), gene_summary$value[['Not Mapped']]
+    gene_summary$value[['Used in Analysis']], length(rownames(spe)), gene_summary$value[['Not Mapped']]
   ))
 
-  if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.9) {
+  if (gene_summary$value[['Not Mapped']] > length(rownames(spe)) * 0.9) {
     stop('More than 90% of genes were not mapped. ',
           'Please check the provided data matches the selected ID type and organism.')
   }
 
-  if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.5) {
+  if (gene_summary$value[['Not Mapped']] > length(rownames(spe)) * 0.5) {
     warning('More than 50% of genes were not mapped. ',
             'You may need to check the provided data matches the selected ID type and organism.')
   }
