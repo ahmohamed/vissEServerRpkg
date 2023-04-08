@@ -63,7 +63,26 @@ cellular <- funwrapper(function(expr,
     neg_regex = '^NegPrb'
   }
 
-  #process data
+  # Check gene mapping and fail fast if there are issues.
+  msigdb = getCollections(idtype = idtype, org = org, collections = collections)
+  gene_summary = geneSummary(msigdb, rownames(sce))
+
+  message(sprintf(
+    '%d out of %d genes provided will be used for the analysis with %d genes not mapped',
+    gene_summary$value[['Used in Analysis']], length(rownames(sce)), gene_summary$value[['Not Mapped']]
+  ))
+
+  if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.9) {
+    stop('More than 90% of genes were not mapped. ',
+          'Please check the provided data matches the selected ID type and organism.')
+  }
+
+  if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.5) {
+    warning('More than 50% of genes were not mapped. ',
+            'You may need to check the provided data matches the selected ID type and organism.')
+  }
+
+  # Process data
   message('Preprocessing data')
   spe = spe |>
     addQC(neg_regex = neg_regex) |>
@@ -87,9 +106,8 @@ cellular <- funwrapper(function(expr,
     dimred = dimred_fa,
     ncomponents = ncomponents,
     top_n_sets = top_n_sets,
-    idtype = idtype,
     org = org,
-    collections = collections
+    msigdb = msigdb
   )
 
   message('Serializing Results')

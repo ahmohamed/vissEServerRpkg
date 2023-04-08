@@ -134,11 +134,10 @@ feature_all <- function(sce) {
   return(sce)
 }
 
-doSelectFeatures <- function(sce, method = c('HVG', 'sparkX', 'all'), ...){
+doSelectFeatures <- function(sce, method = c('HVG', 'all'), ...){
   switch (
     match.arg(method),
     HVG = feature_HVGs(sce, ...),
-    sparkX = feature_sparkX(sce, ...),
     all = feature_all(sce, ...)
   )
 }
@@ -235,21 +234,6 @@ visseFA <-
 
     gene_summary = geneSummary(msigdb, rownames(sce))
 
-    message(sprintf(
-      '%d out of %d genes provided will be used for the analysis with %d genes not mapped',
-      gene_summary$value[['Used in Analysis']], length(rownames(sce)), gene_summary$value[['Not Mapped']]
-    ))
-
-    if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.9) {
-      stop('More than 90% of genes were not mapped. ',
-           'Please check the provided data matches the selected ID type and organism.')
-    }
-
-    if (gene_summary$value[['Not Mapped']] > length(rownames(sce)) * 0.5) {
-      warning('More than 50% of genes were not mapped. ',
-              'You may need to check the provided data matches the selected ID type and organism.')
-    }
-
     pal_fsea <- doFA(sce, msigdb, dimred = dimred, ncomponents = ncomponents)
 
     gene_counts = lapply(GSEABase::geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
@@ -289,13 +273,9 @@ scVisseFA = function(sce,
                      dimred,
                      ncomponents,
                      top_n_sets,
-                     idtype,
                      org,
-                     collections) {
+                     msigdb) {
   message('Performing factor interpretation')
-  msigdb = getCollections(idtype = idtype,
-                          org = org,
-                          collections = collections)
   out = visseFA(
     sce = sce,
     msigdb = msigdb,
