@@ -16,23 +16,25 @@ cellular <- funwrapper(function(expr,
                                 features = NA_character_,
                                 barcodes = NA_character_,
                                 tech = c('single-cell', 'visium', 'xenium', 'cosmx'),
-                                method_filter = 'fixed',
-                                method_normalise = 'none',
-                                method_features = 'all',
+                                method_filter = c('fixed', 'adaptive'),
+                                method_normalise = c('none', 'scran', 'sctransform'),
+                                method_features = c('all', 'HVG'),
                                 sum = 10,
                                 detected = 10,
-                                neg = 5,
+                                neg = 20,
                                 min_gene_count = 0,
                                 dimred = c('PCA', 'NMF', 'UMAP', 'TSNE'),
                                 dimred_fa = c('PCA', 'NMF'),
                                 ncomponents = 5,
                                 top_n_sets = 1000,
-                                idtype = 'SYM',
                                 org = 'hs',
                                 collections = 'all') {
 
   set.seed(1234)
   tech = match.arg(tech)
+  method_filter = match.arg(method_filter)
+  method_normalise = match.arg(method_normalise)
+  method_features = match.arg(method_features)
   dimred_fa = match.arg(dimred_fa)
 
   # read files
