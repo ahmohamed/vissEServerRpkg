@@ -226,7 +226,9 @@ visseFA <-
            ncomponents = 15,
            top_n_sets = 1000,
            cutoff_scores = 0.3,
-           org = 'hs') {
+           org = 'hs',
+           thresh=0.25, 
+           overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
 
     if (top_n_sets < 100) {
       stop('top_n_sets should be at least 100 geneset')
@@ -245,7 +247,7 @@ visseFA <-
       fct_sc = pal_fsea[, fct]
       top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
       siggs = msigdb[names(top_n_sets)]
-      out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name='Weight', gset_attrs = gset_attrs, org=org)
+      out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name='Weight', gset_attrs = gset_attrs, org=org, overlap_measure=overlap_measure, thresh=thresh)
       out$gene_summary = gene_summary
       out$geneset_summary = genesetSummary(msigdb, out)
       out
@@ -274,7 +276,9 @@ scVisseFA = function(sce,
                      ncomponents,
                      top_n_sets,
                      org,
-                     msigdb) {
+                     msigdb,
+                     thresh=0.25, 
+                     overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
   message('Performing factor interpretation')
   out = visseFA(
     sce = sce,
@@ -282,7 +286,9 @@ scVisseFA = function(sce,
     dimred = dimred,
     ncomponents = ncomponents,
     top_n_sets = top_n_sets,
-    org = org
+    org = org,
+    overlap_measure=overlap_measure, 
+    thresh=thresh
   )
   out = summarizeFA(out)
 

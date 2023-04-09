@@ -12,23 +12,29 @@ fun_if <- function(x, run, fun, ...) {
 #' @param tissue_positions file path to cells.csv (xenium) or
 #'   .*_metadata_file.csv
 cellular <- funwrapper(function(expr,
-                                tissue_positions = NA_character_,
-                                features = NA_character_,
-                                barcodes = NA_character_,
-                                tech = c('single-cell', 'visium', 'xenium', 'cosmx'),
-                                method_filter = c('fixed', 'adaptive'),
-                                method_normalise = c('none', 'scran', 'sctransform'),
-                                method_features = c('all', 'HVG'),
-                                sum = 10,
-                                detected = 10,
-                                neg = 20,
-                                min_gene_count = 0,
-                                dimred = c('PCA', 'NMF', 'UMAP', 'TSNE'),
-                                dimred_fa = c('PCA', 'NMF'),
-                                ncomponents = 5,
-                                top_n_sets = 1000,
-                                org = 'hs',
-                                collections = 'all') {
+  tissue_positions = NA_character_,
+  features = NA_character_,
+  barcodes = NA_character_,
+  tech = c('single-cell', 'visium', 'xenium', 'cosmx'),
+  method_filter = c('fixed', 'adaptive'),
+  method_normalise = c('none', 'scran', 'sctransform'),
+  method_features = c('all', 'HVG'),
+  sum = 10,
+  detected = 10,
+  neg = 20,
+  min_gene_count = 0,
+  dimred = c('PCA', 'NMF', 'UMAP', 'TSNE'),
+  dimred_fa = c('PCA', 'NMF'),
+  ncomponents = 5,
+  org = 'hs',
+  collections = 'all',
+  minSize=0,
+  maxSize=100000,
+  overlap_measure = c("ari", "jaccard", "ovlapcoef"),
+  thresh=0.25,
+  top_n_sets = 1000,
+  cutoff_scores = 0.3
+) {
 
   set.seed(1234)
   tech = match.arg(tech)
@@ -36,7 +42,7 @@ cellular <- funwrapper(function(expr,
   method_normalise = match.arg(method_normalise)
   method_features = match.arg(method_features)
   dimred_fa = match.arg(dimred_fa)
-  
+
   if (dimred_fa == 'PCA' ||'UMAP' %in% dimred || 'TSNE' %in% dimred) {
     if (!'PCA' %in% dimred) {
       dimred = c('PCA', dimred)
@@ -74,7 +80,7 @@ cellular <- funwrapper(function(expr,
   }
 
   # Check gene mapping and fail fast if there are issues.
-  msigdb = getCollections(idtype = 'SYM', org = org, collections = collections)
+  msigdb = getCollections(idtype = 'SYM', org = org, collections = collections, minSize = minSize, maxSize = maxSize)
   gene_summary = geneSummary(msigdb, rownames(spe))
 
   message(sprintf(

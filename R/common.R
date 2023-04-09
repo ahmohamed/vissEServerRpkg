@@ -16,13 +16,17 @@ subsetCollection <- function(gsc, collection = c()) {
   return(gsc)
 }
 
-getCollections <- function(idtype='SYM', org='hs', collections='all') {
+getCollections <- function(idtype='SYM', org='hs', collections='all', minSize=0, maxSize=100000) {
   if (!idtype %in% c('SYM', 'EZ')) {
     idtype = 'SYM'
   }
   msigdb = getdata(paste0(org, '_', idtype))
   if (!'all' %in% collections) {
     msigdb = subsetCollection(msigdb, collections)
+  }
+  if (minSize > 0 || maxSize < 100000) {
+    keep = sapply(msigdb, \(x) length(GSEABase::geneIds(x)) >= minSize && length(GSEABase::geneIds(x)) <= maxSize)
+    msigdb = msigdb[keep]
   }
   msigdb
 }
@@ -102,15 +106,15 @@ genesetSummary <- function(msigdb, out) {
   )
 }
 
-visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs") {
+visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs",
+  thresh=0.25, overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
   message(sprintf("Starting vissE analysis for %d genesets", length(siggs)))
   if (length(siggs) < 10) {
     stop("Enrichment results has less that 10 significant genesets. Consider adding more geneset collections.")
   }
 
   #compute geneset overlaps between significant genesets
-  thresh = 0.25
-  gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = thresh)
+  gs_ovlap = vissE::computeMsigOverlap(siggs, thresh = thresh, measure=overlap_measure)
   message(sprintf("Detected %d genesets overlaps with threshold %f", nrow(gs_ovlap), thresh))
 
   #create a network from overlaps
