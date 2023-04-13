@@ -145,6 +145,9 @@ readCosMx <- function(exprmat, metadata) {
     spatialCoordsNames = c('x', 'y')
   )
 
+  #filter out cell 0
+  #spe = spe[, spe$]
+
   rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
   spe
 }
@@ -169,9 +172,10 @@ readSpe <- function(hdf5file, positions) {
   positions = positions[obs, ]
   spe = SpatialExperiment::SpatialExperiment(
     assays = SummarizedExperiment::assays(sce),
+    colData = as(positions, 'DataFrame'),
     rowData = S4Vectors::DataFrame(Symbol = SummarizedExperiment::rowData(sce)$Symbol),
     sample_id = 'Spatial Sample',
-    spatialCoords = as.matrix(positions[, c('x', 'y')])
+    spatialCoordsNames = c('x', 'y')
   )
 
   rownames(spe) = SummarizedExperiment::rowData(spe)$Symbol
