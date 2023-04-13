@@ -89,6 +89,6 @@ funwrapper <- function(f) {
       return(f(...))
     }
     res <- safely2(f)(..., .logger=.logger, .console=.console, .silent=.silent)
-    jsonlite::toJSON(res, digits=2)
+    jsonlite::toJSON(res, digits=3, use_signif = TRUE)
   })
 }
