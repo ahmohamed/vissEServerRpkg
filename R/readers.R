@@ -89,15 +89,16 @@ readSce <- function(mat, features, barcodes, annot = NULL){
 
 #----spatial readers----
 readVisiumXY <- function(tissue_positions) {
-  df <- read.csv(tissue_positions, header = FALSE, row.names = 1)
+  header = grepl('in_tissue', readLines(tissue_positions, n = 1))
+  df = read.csv(tissue_positions, header = header, row.names = 1)
   if (ncol(df) != 5) {
     stop("Invalid tissue_positions file. ",
          "This should be a CSV file with 6 columns")
   }
-  colnames(df) <- c("in_tissue", "array_row", "array_col",
+  colnames(df) = c("in_tissue", "array_row", "array_col",
                     "y", "x")
 
-  df$in_tissue <- as.logical(df$in_tissue)
+  df$in_tissue = as.logical(df$in_tissue)
 
   return(df)
 }
