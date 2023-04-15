@@ -215,8 +215,9 @@ doFA <- function(sce, gsc, dimred = c('PCA', 'NMF'), ncomponents = 15) {
   gsc = gsc[sapply(gsc, function(x)
     sum(GSEABase::geneIds(x) %in% rownames(gene_weights)) >= 5)]
   franks = singscore::rankGenes(gene_weights)
-  pal_fsea = singscore::multiScore(franks, gsc)$Scores
-  pal_fsea
+  fsea = singscore::multiScore(franks, gsc)$Scores
+  attr(fsea, 'weights') = gene_weights
+  fsea
 }
 
 visseFA <-
@@ -227,7 +228,7 @@ visseFA <-
            top_n_sets = 1000,
            cutoff_scores = 0.3,
            org = 'hs',
-           thresh=0.25, 
+           thresh=0.25,
            overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
 
     if (top_n_sets < 100) {
@@ -236,15 +237,16 @@ visseFA <-
 
     gene_summary = geneSummary(msigdb, rownames(sce))
 
-    pal_fsea <- doFA(sce, msigdb, dimred = dimred, ncomponents = ncomponents)
+    fsea <- doFA(sce, msigdb, dimred = dimred, ncomponents = ncomponents)
 
     gene_counts = lapply(GSEABase::geneIds(msigdb), intersect, rownames(sce)) |> lapply(length)
     gset_attrs = data.frame(ID=names(gene_counts), Count=unlist(gene_counts))
 
     lapply(1:ncomponents, function(fct) {
-      fct_weights = attr(SingleCellExperiment::reducedDim(sce, type = dimred), 'rotation')[, fct]
+      fct_weights = attr(fsea, 'weights')[, fct]
       fct_proj = SingleCellExperiment::reducedDim(sce, dimred)[, fct]
-      fct_sc = pal_fsea[, fct]
+      fct_sc = fsea[, fct]
+      gset_attrs$Score = fct_sc[gset_attrs$ID]
       top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
       siggs = msigdb[names(top_n_sets)]
       out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name='Weight', gset_attrs = gset_attrs, org=org, overlap_measure=overlap_measure, thresh=thresh)
@@ -277,7 +279,7 @@ scVisseFA = function(sce,
                      top_n_sets,
                      org,
                      msigdb,
-                     thresh=0.25, 
+                     thresh=0.25,
                      overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
   message('Performing factor interpretation')
   out = visseFA(
@@ -287,7 +289,7 @@ scVisseFA = function(sce,
     ncomponents = ncomponents,
     top_n_sets = top_n_sets,
     org = org,
-    overlap_measure=overlap_measure, 
+    overlap_measure=overlap_measure,
     thresh=thresh
   )
   out = summarizeFA(out)
