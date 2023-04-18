@@ -204,6 +204,7 @@ cluster_graph <- function(sce, snn = 20, alg = igraph::cluster_walktrap, ...) {
 #----factor interpretation----
 doFA <- function(sce, gsc, dimred = c('PCA', 'NMF'), ncomponents = 15) {
   dimred = match.arg(dimred)
+  directional = dimred %in% c('PCA') #are gene weights directional?
   attr_name = switch(
     dimred,
     PCA = 'rotation',
@@ -216,7 +217,7 @@ doFA <- function(sce, gsc, dimred = c('PCA', 'NMF'), ncomponents = 15) {
   gsc = gsc[sapply(gsc, function(x)
     sum(GSEABase::geneIds(x) %in% rownames(gene_weights)) >= 5)]
   franks = singscore::rankGenes(gene_weights)
-  fsea = singscore::multiScore(franks, gsc)$Scores
+  fsea = singscore::multiScore(franks, gsc, centerScore = directional)$Scores
   attr(fsea, 'weights') = gene_weights
   fsea
 }
