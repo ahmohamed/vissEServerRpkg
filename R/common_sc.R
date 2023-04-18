@@ -179,7 +179,8 @@ runTSNE <- function(sce) {
 }
 
 exportReducedDim = function(sce, name, ncomponents) {
-  df = SingleCellExperiment::reducedDim(sce, name)
+  df = SingleCellExperiment::reducedDim(sce, name) |> 
+    apply(2, qmax)
   colnames(df) = paste0(name, 1:ncol(df))
   if (ncomponents > ncol(df)) {
     ncomponents = ncol(df)
@@ -304,6 +305,11 @@ scVisseFA = function(sce,
 
   qcmetrics = SummarizedExperiment::colData(sce)[, c('sum', 'detected', 'subsets_Neg_percent')]
   cellmetrics = as.data.frame(cbind(qcmetrics, dimlist)) |>
+    dplyr::mutate(
+      sum = qmax(sum),
+      detected = qmax(detected),
+      subsets_Neg_percent = qmax(subsets_Neg_percent)
+    ) |>
     dplyr::rename(
       `Library Size` = sum,
       `Gene Count` = detected,

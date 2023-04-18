@@ -70,6 +70,13 @@ to_symbol <- function(ids, orgdb, from) {
   return(ids)
 }
 
+qmax <- function(x, prob = 0.99) {
+  x_max = stats::quantile(abs(x), probs = prob)
+  x = pmin(x, x_max)
+  x = pmax(x, -x_max)
+  return(x)
+}
+
 getPPI <- function(org="hs") {
   imex_0821 = getdata('imex_0821')
   taxid = c(hs="9606",  mm="10090")[org]
