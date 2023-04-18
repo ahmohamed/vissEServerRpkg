@@ -179,13 +179,12 @@ runTSNE <- function(sce) {
 }
 
 exportReducedDim = function(sce, name, ncomponents) {
-  df = SingleCellExperiment::reducedDim(sce, name) |> 
-    apply(2, qmax)
+  df = SingleCellExperiment::reducedDim(sce, name)
   colnames(df) = paste0(name, 1:ncol(df))
   if (ncomponents > ncol(df)) {
     ncomponents = ncol(df)
   }
-  df[, 1:ncomponents]
+  df[, 1:ncomponents] |> apply(2, nice)
 }
 
 #----clustering----
@@ -251,7 +250,7 @@ visseFA <-
       gset_attrs$Score = fct_sc[gset_attrs$ID]
       top_n_sets = head(sort(abs(fct_sc), decreasing = TRUE), top_n_sets)
       siggs = msigdb[names(top_n_sets)]
-      out = visseWrapper(siggs, gsStats=fct_sc, gStats=fct_weights, gStat_name='Weight', gset_attrs = gset_attrs, org=org, overlap_measure=overlap_measure, thresh=thresh)
+      out = visseWrapper(siggs, gsStats=signif(fct_sc, 3), gStats=signif(fct_weights, 3), gStat_name='Weight', gset_attrs = gset_attrs, org=org, overlap_measure=overlap_measure, thresh=thresh)
       out$gene_summary = gene_summary
       out$geneset_summary = genesetSummary(msigdb, out)
       out
@@ -309,7 +308,7 @@ scVisseFA = function(sce,
     dplyr::mutate(
       sum = qmax(sum),
       detected = qmax(detected),
-      subsets_Neg_percent = qmax(subsets_Neg_percent)
+      subsets_Neg_percent = nice(subsets_Neg_percent)
     ) |>
     dplyr::rename(
       `Library Size` = sum,

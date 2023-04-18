@@ -77,6 +77,10 @@ qmax <- function(x, prob = 0.99) {
   return(x)
 }
 
+nice <- function(x, prob = 0.99, digits = 3) {
+  signif(qmax(x, prob = prob), digits = digits)
+}
+
 getPPI <- function(org="hs") {
   imex_0821 = getdata('imex_0821')
   taxid = c(hs="9606",  mm="10090")[org]
@@ -160,11 +164,11 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
   out = list(
-    'edges' =  igraph::as_data_frame(gs_ovnet, 'edges'),
-    'nodes' = dplyr::left_join(grps_df, vertices_df, by=c(Geneset = 'label')),
+    'edges' =  igraph::as_data_frame(gs_ovnet, 'edges') |> dplyr::mutate(weight=signif(weight, 3)),
+    'nodes' = dplyr::left_join(grps_df, vertices_df, by=c(Geneset = 'label')) |> dplyr::mutate_if(is.double, signif, digits=3),
     # 'groups' = plyr::ldply(grps, function(x) data.frame('Geneset' = x), .id = 'Cluster'),
     # 'geneMembership' = head(geneIds(siggs[V(gs_ovnet)$label])),
-    'words' = words
+    'words' = dplyr::mutate(words, freq=signif(freq, 3))
   )
   if (!is.null(gStats)) {
     ppi = getPPI(org=org)
