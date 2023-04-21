@@ -118,6 +118,10 @@ readCosMx <- function(exprmat, metadata) {
   emat = read.csv(exprmat, header = TRUE)
   emat = emat[emat$cell_ID > 0, ]
 
+  #round coords (coords seem to be pixel resolved and don't offer additional resolution)
+  annots$x = round(annots$x)
+  annots$y = round(annots$y)
+
   #add unique cell IDs
   rownames(emat) = paste(emat$fov, emat$cell_ID, sep = '_')
   rownames(annots) = paste(annots$fov, annots$cell_ID, sep = '_')
