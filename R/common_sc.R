@@ -99,7 +99,7 @@ normalise_scran <- function(sce) {
 }
 
 normalise_sct <- function(sce) {
-  vst_res = sctransform::vst(SingleCellExperiment::counts(sce, vst.flavor = 'v2'),
+  vst_res = sctransform::vst(as.matrix(SingleCellExperiment::counts(sce, vst.flavor = 'v2')),
                              verbosity = 0)
   #subset data
   sce = sce[rownames(vst_res$y), ]
