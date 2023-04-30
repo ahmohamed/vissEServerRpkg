@@ -43,14 +43,10 @@ cellular <- funwrapper(function(expr,
   method_features = match.arg(method_features)
   dimred_fa = match.arg(dimred_fa)
 
-  if (dimred_fa == 'PCA' ||'UMAP' %in% dimred || 'TSNE' %in% dimred) {
-    if (!'PCA' %in% dimred) {
-      dimred = c('PCA', dimred)
-    }
-  }
-
-  if (dimred_fa == 'NMF' && !'NMF' %in% dimred) {
-      dimred = c('NMF', dimred)
+  #add PCA if computing UMAP or TSNE
+  dimred = union(dimred_fa, dimred)
+  if (any(c('UMAP', 'TSNE') %in% dimred)) {
+    dimred = union('PCA', dimred)
   }
 
   # read files
