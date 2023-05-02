@@ -5,6 +5,9 @@ RUN mkdir /root/rpkg
 RUN mkdir /root/examples
 COPY . /root/rpkg
 
+RUN --mount=type=secret,id=OPENAI_API_KEY \
+  cat /run/secrets/OPENAI_API_KEY
+
 RUN OPENAI_API_KEY=${{OPENAI_API_KEY}} R -e "stopifnot(Sys.getenv('OPENAI_API_KEY') != "")"
 RUN R -e "devtools::install('/root/rpkg', dependencies=T)"
 RUN R -e "devtools::install_github('davisLaboratory/vissE')"
