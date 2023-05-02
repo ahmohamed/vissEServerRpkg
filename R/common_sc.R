@@ -265,6 +265,7 @@ summarizeFA <- function(fa_results) {
       dplyr::group_by(Cluster) |>
       dplyr::slice_max(freq, n=20, with_ties = FALSE)
   })
+  out$gptsummary = lapply(fa_results, function(f) f$gpt)
   out
 }
 

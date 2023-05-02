@@ -170,6 +170,8 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     # 'geneMembership' = head(geneIds(siggs[V(gs_ovnet)$label])),
     'words' = dplyr::mutate(words, freq=signif(freq, 3))
   )
+  out$gpt = get_gpt_summary(out$nodes)
+
   if (!is.null(gStats)) {
     ppi = getPPI(org=org)
 
