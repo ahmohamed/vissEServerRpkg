@@ -66,3 +66,5 @@ jobs:
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          secrets: |
+            OPENAI_API_KEY=${{ secrets.MYTOKEN }}
