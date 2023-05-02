@@ -6,7 +6,7 @@ RUN mkdir /root/examples
 COPY . /root/rpkg
 
 RUN --mount=type=secret,id=OPENAI_API_KEY \
-  R -e "if(Sys.getenv('OPENAI_API_KEY') != '') stop('none')"
+  R -e "Sys.setenv(OPENAI_API_KEY=readLines('/run/secrets/OPENAI_API_KEY')[[1]]) if(Sys.getenv('OPENAI_API_KEY') != '') stop('none')"
 
 RUN R -e "if(Sys.getenv('OPENAI_API_KEY') == '') stop('none')"
 RUN R -e "devtools::install('/root/rpkg', dependencies=T)"
