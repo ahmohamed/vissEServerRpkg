@@ -1,17 +1,9 @@
 library(usethis)
-for (version in msigdb::getMsigdbVersions()[1:4]) {
-  for (org in c('hs', 'mm')) {
-    for (idtype in c('SYM', 'EZ')) {
-      name = paste0(org, "_", idtype, "_", version)
-      msigdb = msigdb::getMsigdb(org = org, id = idtype, version=version)
-      msigdb = msigdb::appendKEGG(msigdb)
-      assign(name, msigdb)
+library(msigdb)
 
-      # Weird behavior of use_data
-      # See here https://stackoverflow.com/a/49676445/3192855
-      do.call("use_data", list(as.name(name), overwrite = TRUE))
-    }
-  }
-}
+#msigdb
+hsapiens = appendKEGG(getMsigdb('hs'))
+mmusculus = appendKEGG(getMsigdb("mm"))
 
-
+saveRDS(hsapiens, './inst/extdata/species_gsc/hsapiens_gsc.rds')
+saveRDS(mmusculus, "./inst/extdata/species_gsc/mmusculus_gsc.rds")
