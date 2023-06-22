@@ -39,19 +39,25 @@ subsetCollection <- function(gsc, collection = c()) {
   return(gsc)
 }
 
-getCollections <- function(idtype='SYM', org='hs', collections='all', minSize=0, maxSize=100000) {
-  if (!idtype %in% c('SYM', 'EZ')) {
-    idtype = 'SYM'
+getCollections <- function(org=getSpecies(), idtype=getIdTypes(org), collections='all', minSize=0, maxSize=100000) {
+  org = match.arg(org)
+  idtype = match.arg(idtype)
+
+  # load gene-set collection
+  fpath = system.file(sprintf("extdata/species_gsc/%s_gsc.rds", org), package = "vissEServer")
+  gsc = readRDS(fpath)
+
+  #subset collections
+  if (!"all" %in% collections) {
+    gsc = subsetCollection(gsc, collections)
   }
-  msigdb = getdata(paste0(org, '_', idtype))
-  if (!'all' %in% collections) {
-    msigdb = subsetCollection(msigdb, collections)
-  }
+  
+  #subset by size
   if (minSize > 0 || maxSize < 100000) {
-    keep = sapply(msigdb, \(x) length(GSEABase::geneIds(x)) >= minSize && length(GSEABase::geneIds(x)) <= maxSize)
-    msigdb = msigdb[keep]
+    keep = sapply(gsc, \(x) length(GSEABase::geneIds(x)) >= minSize && length(GSEABase::geneIds(x)) <= maxSize)
+    gsc = gsc[keep]
   }
-  msigdb
+  gsc
 }
 
 handle_ids <- function(ids, msigdb, org, idtype) {
