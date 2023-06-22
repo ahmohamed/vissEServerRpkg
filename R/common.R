@@ -1,13 +1,26 @@
 api_version = 0.1
 
-getIdTypes <- function() {
-  c("symbol", "entrez", "uniprot", "ensembl")
-}
-
 getSpecies <- function() {
   fpath = system.file("extdata/species_info.rds", package = "vissEServer")
   species = readRDS(fpath)
   species$Species
+}
+
+getIdTypes <- function(org = getSpecies()) {
+  org = match.arg(org)
+
+  #load supported ID data
+  fpath = system.file("extdata/species_geneid_present.rds", package = "vissEServer")
+  idtypes = readRDS(fpath)
+
+  # subset organism
+  if (org %in% c('hsapiens', 'mmusculus')) {
+    idtypes = colnames(idtypes)
+  } else {
+    idtypes = idtypes[org, ]
+    idtypes = names(idtypes)[idtypes]
+  }
+  idtypes
 }
 
 getdata <- function(x) {
