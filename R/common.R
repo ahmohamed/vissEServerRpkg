@@ -1,5 +1,15 @@
 api_version = 0.1
 
+getIdTypes <- function() {
+  c("symbol", "entrez", "uniprot", "ensembl")
+}
+
+getSpecies <- function() {
+  fpath = system.file("extdata/species_info.rds", package = "vissEServer")
+  species = readRDS(fpath)
+  species$Species
+}
+
 getdata <- function(x) {
   e <- new.env()
   name <- utils::data(list=c(x), envir = e)[[1]]
@@ -81,10 +91,40 @@ nice <- function(x, prob = 0.99, digits = 3) {
   signif(qmax(x, prob = prob), digits = digits)
 }
 
-getPPI <- function(org="hs") {
-  imex_0821 = getdata('imex_0821')
-  taxid = c(hs="9606",  mm="10090")[org]
-  ppi = imex_0821[imex_0821$Taxid %in% taxid, ]
+emptyPPI <- function() {
+  data.frame(
+    EntrezA = character(),
+    EntrezB = character(),
+    Taxid = character(),
+    InteractorA = character(),
+    InteractorB = character(),
+    SymbolA = character(),
+    SymbolB = character(),
+    InteractionType = character(),
+    DetectionMethod = character(),
+    Confidence = numeric(),
+    Inferred = logical()
+  )
+}
+
+getPPI <- function(org = getSpecies()) {
+  org = match.arg(org)
+
+  # taxid map
+  taxid = c(hsapiens = "9606", mmusculus = "10090")
+  if (!org %in% names(taxid)) {
+    return(emptyPPI())
+  } else {
+    taxid = taxid[org]
+  }
+
+  #read PPI network
+  fpath = system.file("extdata/imex.rds", package = "vissEServer")
+  imex = readRDS(fpath)
+  
+  #subset to species
+  ppi = imex[imex$Taxid %in% taxid, ]
+  ppi
 }
 
 geneSummary <- function(msigdb, genes) {
