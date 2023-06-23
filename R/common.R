@@ -39,20 +39,19 @@ subsetCollection <- function(gsc, collection = c()) {
   return(gsc)
 }
 
-getCollections <- function(org=getSpecies(), idtype=getIdTypes(org), collections='all', minSize=0, maxSize=100000) {
+getCollections <- function(org = getSpecies(), collections = "all", minSize = 0, maxSize = 100000) {
   org = match.arg(org)
-  idtype = match.arg(idtype)
 
   # load gene-set collection
   fpath = system.file(sprintf("extdata/species_gsc/%s_gsc.rds", org), package = "vissEServer")
   gsc = readRDS(fpath)
 
-  #subset collections
+  # subset collections
   if (!"all" %in% collections) {
     gsc = subsetCollection(gsc, collections)
   }
-  
-  #subset by size
+
+  # subset by size
   if (minSize > 0 || maxSize < 100000) {
     keep = sapply(gsc, \(x) length(GSEABase::geneIds(x)) >= minSize && length(GSEABase::geneIds(x)) <= maxSize)
     gsc = gsc[keep]
@@ -60,41 +59,62 @@ getCollections <- function(org=getSpecies(), idtype=getIdTypes(org), collections
   gsc
 }
 
-handle_ids <- function(ids, msigdb, org, idtype) {
-  if (idtype %in% c('SYM', 'EZ')) {
-    return (setNames(ids, ids))
+handle_ids <- function(ids, gsc, org = getSpecies(), idtype = getIdTypes(org)) {
+  org = match.arg(org)
+  idtype = match.arg(idtype)
+
+  # split gene groups (proteomics)
+  sep_groups = data.frame(ids = ids) |>
+    dplyr::mutate(original_ids = ids) |>
+    tidyr::separate_rows(ids, sep = ";")
+
+  # if idtype does not match database key, convert
+  if (org %in% c("hsapiens", "mmusculus") & idtype != "external_gene_name") {
+    sep_groups$mapped_ids = convert_ids(ids, org, idtype, "external_gene_name")
+  } else if (!org %in% c("hsapiens", "mmusculus") & idtype != "ensembl_gene_id") {
+    sep_groups$mapped_ids = convert_ids(ids, org, idtype, "ensembl_gene_id")
+  } else {
+    # if idtype matches key type, do nothing
+    sep_groups$mapped_ids = sep_groups$ids
   }
+  
+  #define universe using gsc
+  universe = unique(unlist(GSEABase::geneIds(gsc)))
+  sep_groups = sep_groups |>
+    dplyr::mutate(matched = !is.na(mapped_ids) & mapped_ids %in% universe) |>
+    dplyr::group_by(original_ids) |>
+    dplyr::arrange(!matched) |>
+    dplyr::slice_head(n = 1) |>
+    dplyr::mutate(mapped_ids = dplyr::coalesce(mapped_ids, ids))
 
-  sep_groups = data.frame(ids=ids) |>
-    dplyr::mutate(original_ids=ids) |>
-    tidyr::separate_rows(ids, sep = ';')
-
-  orgdblist = list(hs=org.Hs.eg.db::org.Hs.eg.db, mm=org.Mm.eg.db::org.Mm.eg.db)
-  symbol_ids = to_symbol(sep_groups$ids, orgdblist[[org]], from = idtype)
-  universe = unique(unlist(GSEABase::geneIds(msigdb)))
-  sep_groups$symbols = symbol_ids[sep_groups$ids]
-  mapped_symbols = sep_groups |>
-    dplyr::mutate(matched=!is.na(symbols) & symbols %in% universe) |>
-    dplyr::group_by(original_ids) |> dplyr::arrange(!matched) |>
-    dplyr::slice_head(n=1) |>
-    dplyr::mutate(symbols=dplyr::coalesce(symbols, ids))
-
-  setNames(mapped_symbols$symbols, mapped_symbols$original_ids)
+  setNames(sep_groups$mapped_ids, sep_groups$original_ids)
 }
 
-to_symbol <- function(ids, orgdb, from) {
-  if (!is(orgdb, 'OrgDb'))
-    stop('Provide valid organism database')
+convert_ids <- function(ids, org = getSpecies(), from = getIdTypes(org), to = getIdTypes(org)) {
+  org = match.arg(org)
+  from = match.arg(from)
+  to = match.arg(to)
 
-  if (!any(ids %in% AnnotationDbi::keys(orgdb, from)))
+  # load gene ID map for organism
+  fpath = system.file(sprintf("extdata/species_gsc/%s_idmap.rds", org), package = "vissEServer")
+  idmap = readRDS(fpath)
+
+  # check keys
+  if (!any(ids %in% idmap[, from])) {
     stop(sprintf('None of the "%s" IDs are valid', from))
+  }
 
-  #convert numeric IDs to character
-  if (!is.character(ids))
+  # convert numeric IDs to character
+  if (!is.character(ids)) {
     ids = as.character(ids)
+  }
 
-  #convert types
-  ids = AnnotationDbi::mapIds(orgdb, ids, 'SYMBOL', from, multiVals = 'first')
+  # select first mapping and crete mapping vec
+  idmap = idmap[, c(from, to)]
+  idmap = idmap[!duplicated(idmap[, from]), ]
+  idmap = setNames(idmap[, to], idmap[, from])
+  #convert IDs
+  ids = idmap[ids]
 
   return(ids)
 }

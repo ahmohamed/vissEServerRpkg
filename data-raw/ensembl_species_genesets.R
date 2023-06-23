@@ -2,6 +2,8 @@ library(tidyverse)
 library(biomaRt)
 library(GO.db)
 library(GSEABase)
+library(org.Hs.eg.db)
+library(org.Mm.eg.db)
 
 #----set params----
 #creation date
@@ -11,7 +13,7 @@ creation_date = as.character(Sys.Date())
 id_types = c('ensembl_gene_id', 'entrezgene_id', 'external_gene_name', 'uniprot_gn_id')
 
 #output dir
-outdir = paste0('inst/extdata/species_GODB')
+outdir = paste0('inst/extdata/species_gsc')
 dir.create(outdir, recursive = TRUE)
 
 #get GO
@@ -79,11 +81,23 @@ logs = lapply(organisms$dataset, function(org) tryCatch({
   saveRDS(idmap, outfile)
 }, error = function(e) e))
 
-#write species information file
-organisms |> 
-  dplyr::rename(Species = 'dataset', Description = 'description', Version = 'version') |> 
-  mutate(Species = gsub('_.*', '', Species)) |> 
-  saveRDS('inst/extdata/species_info.rds')
+# write species information file
+organisms |>
+  dplyr::rename(Species = "dataset", Description = "description", Version = "version") |>
+  mutate(Species = gsub("_.*", "", Species)) |>
+  saveRDS("inst/extdata/species_info.rds")
+
+#----create ID maps for human and mouse----
+org_cols = c("ENSEMBL", "ENTREZID", "SYMBOL", "UNIPROT")
+hsmap = select(org.Hs.eg.db, keys(org.Hs.eg.db, 'SYMBOL'), org_cols, 'SYMBOL')
+hsmap = hsmap[, org_cols]
+mmmap = select(org.Mm.eg.db, keys(org.Mm.eg.db, 'SYMBOL'), org_cols, 'SYMBOL')
+mmmap = mmmap[, org_cols]
+colnames(hsmap) = colnames(mmmap) = id_types
+
+#save
+saveRDS(hsmap, file.path(outdir, "hsapiens_idmap.rds"))
+saveRDS(mmmap, file.path(outdir, "mmusculus_idmap.rds"))
 
 #----ID presence----
 id_files = list.files(outdir, recursive = TRUE, full.names = TRUE, pattern = 'idmap.rds')
