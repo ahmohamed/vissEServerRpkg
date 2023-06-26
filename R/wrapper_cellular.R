@@ -26,7 +26,7 @@ cellular <- funwrapper(function(expr,
   dimred = c('PCA', 'NMF', 'UMAP', 'TSNE'),
   dimred_fa = c('PCA', 'NMF'),
   ncomponents = 5,
-  org = 'hs',
+  org = 'hsapiens',
   collections = 'all',
   minSize=0,
   maxSize=100000,
@@ -76,7 +76,7 @@ cellular <- funwrapper(function(expr,
   }
 
   # Check gene mapping and fail fast if there are issues.
-  msigdb = getCollections(idtype = 'SYM', org = org, collections = collections, minSize = minSize, maxSize = maxSize)
+  msigdb = getCollections(org = org, collections = collections, minSize = minSize, maxSize = maxSize)
   gene_summary = geneSummary(msigdb, rownames(spe))
 
   message(sprintf(
