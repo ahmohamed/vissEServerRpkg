@@ -14,12 +14,7 @@ getIdTypes <- function(org = getSpecies()) {
   idtypes = readRDS(fpath)
 
   # subset organism
-  if (org %in% c('hsapiens', 'mmusculus')) {
-    idtypes = colnames(idtypes)
-  } else {
-    idtypes = idtypes[org, ]
-    idtypes = names(idtypes)[idtypes]
-  }
+  idtypes = colnames(idtypes)[idtypes[org, ]]
   idtypes
 }
 

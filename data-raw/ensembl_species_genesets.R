@@ -110,7 +110,10 @@ id_present = id_files |>
   pivot_wider(id_cols = Species, names_from = ID, values_from = Present) |> 
   column_to_rownames('Species') |> 
   as.matrix()
-saveRDS(id_present, file.path('inst/extdata/species_geneid_present.rds'))
+  
+# add human and mouse
+id_present = rbind(id_present, matrix(TRUE, 2, 4, dimnames = list(c("hsapiens", "mmusculus"), colnames(id_present))))
+saveRDS(id_present, file.path("inst/extdata/species_geneid_present.rds"))
 
 #----visualise data availability----
 #ID type presence
