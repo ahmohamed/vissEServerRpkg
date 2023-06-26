@@ -1,8 +1,9 @@
 
 #' @export
 ora = funwrapper(function(
-  genelist, idtype='SYM',
-  org='hs',
+  genelist,
+  org=getSpecies(),
+  idtype=getIdTypes(org),
   collections='all',
   minSize=0,
   maxSize=100000,
@@ -13,10 +14,10 @@ ora = funwrapper(function(
     "Starting ORA with %d genes, ID type %s, organism %s and collections %s",
     length(genelist), idtype, org, paste(collections, collapse = ", ")
   ))
-  msigdb = getCollections(idtype=idtype, org=org, collections=collections)
+  msigdb = getCollections(org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
-  genelist = handle_ids(ids=unlist(genelist), msigdb=msigdb, org=org, idtype=idtype)
+  genelist = handle_ids(ids=unlist(genelist), gsc=msigdb, org=org, idtype=idtype)
   genelist = genelist[!duplicated(genelist)]
 
   gene_summary = geneSummary(msigdb, genelist)
