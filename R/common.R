@@ -9,7 +9,7 @@ getSpecies <- function() {
 getIdTypes <- function(org = getSpecies()) {
   org = match.arg(org)
 
-  #load supported ID data
+  # load supported ID data
   fpath = system.file("extdata/species_geneid_present.rds", package = "vissEServer")
   idtypes = readRDS(fpath)
 
@@ -52,6 +52,20 @@ getCollections <- function(org = getSpecies(), collections = "all", minSize = 0,
     gsc = gsc[keep]
   }
   gsc
+}
+
+getIDF <- function(org = getSpecies()) {
+  org = match.arg(org)
+
+  # load IDF
+  if (!org %in% c("hsapiens", "mmusculus")) {
+    org = "all"
+  }
+  
+  #load precomputed IDF
+  fpath = system.file(sprintf("extdata/species_idf/%s_idf.rds", org), package = "vissEServer")
+  idf = readRDS(fpath)
+  idf
 }
 
 handle_ids <- function(ids, gsc, org = getSpecies(), idtype = getIdTypes(org)) {
@@ -191,7 +205,7 @@ genesetSummary <- function(msigdb, out) {
   )
 }
 
-visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hs",
+visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level statistic", gset_attrs=NULL, org="hsapiens",
   thresh=0.25, overlap_measure = c("ari", "jaccard", "ovlapcoef")) {
   message(sprintf("Starting vissE analysis for %d genesets", length(siggs)))
   if (length(siggs) < 10) {
@@ -234,7 +248,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
   }
 
   message("Computing wordclouds")
-  p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = 'Name', org = org))
+  p2 = suppressWarnings(vissE::plotMsigWordcloud(siggs, grps, type = "Name", idf = getIDF(org)))
   words = dplyr::rename(p2$data[, 1:3], Cluster = NodeGroup)
   words$Cluster = gsub(' \\(.*\\)', '', as.character(words$Cluster))
   out = list(

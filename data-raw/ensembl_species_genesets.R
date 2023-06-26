@@ -6,6 +6,57 @@ library(org.Hs.eg.db)
 library(org.Mm.eg.db)
 library(msigdb)
 
+computeIdf <- function(gsc_name, gsc_short) {
+  rmwords = vissE:::getMsigBlacklist()
+
+  docs = list("Name" = gsc_name, "Short" = gsc_short)
+  docs = lapply(docs, unique)
+
+  # text-mining
+  docs = lapply(docs, function(d) tm::Corpus(tm::VectorSource(d)))
+  toSpace <- tm::content_transformer(function(x, pattern) gsub(pattern, " ", x))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "_"))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "/"))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "@"))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "\\|"))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "\\("))
+  docs = lapply(docs, function(d) tm::tm_map(d, toSpace, "\\)"))
+
+  # Convert the text to lower case
+  docs = lapply(docs, function(d) tm::tm_map(d, tm::content_transformer(tolower)))
+  # Remove numbers
+  # docs = lapply(docs, function(d) tm_map(d, removeNumbers))
+  # Remove english common stopwords
+  docs = lapply(docs, function(d) tm::tm_map(d, tm::removeWords, tm::stopwords("english")))
+  # Remove your own stop word
+  # specify your stopwords as a character vector
+  docs = lapply(docs, function(d) tm::tm_map(d, tm::removeWords, rmwords))
+  # Remove punctuations
+  docs = lapply(docs, function(d) tm::tm_map(d, tm::removePunctuation))
+  # Eliminate extra white spaces
+  docs = lapply(docs, function(d) tm::tm_map(d, tm::stripWhitespace))
+  # Remove full numbers
+  docs = lapply(docs, function(d) tm::tm_filter(d, function(x) !grepl("\\b[0-9]+\\b", x)))
+  # Text lemmatisation
+  docs = lapply(docs, function(d) tm::tm_map(d, textstem::lemmatize_strings))
+
+  # compute idf
+  dtms = lapply(docs, tm::TermDocumentMatrix)
+  dtms = lapply(dtms, as.matrix)
+
+  # compute IDF
+  idfs = lapply(dtms, function(x) {
+    idf = log(ncol(x) / rowSums(x != 0))
+    return(idf)
+  })
+  # sort names to quicken searches
+  idfs = lapply(idfs, function(x) {
+    x[sort(names(x))]
+  })
+
+  return(idfs)
+}
+
 #----set params----
 #creation date
 creation_date = as.character(Sys.Date())
@@ -123,6 +174,17 @@ id_present = id_files |>
 # add human and mouse
 id_present = rbind(id_present, matrix(TRUE, 2, 4, dimnames = list(c("hsapiens", "mmusculus"), colnames(id_present))))
 saveRDS(id_present, file.path("inst/extdata/species_geneid_present.rds"))
+
+#----Pre-compute IDFs----
+#precomputed IDF for hs and mm
+idf_hs = msigdb::getMsigdbIDF("hs")
+idf_mm = msigdb::getMsigdbIDF("mm")
+saveRDS(idf_hs, "./inst/extdata/species_idf/hsapiens_idf.rds")
+saveRDS(idf_mm, "./inst/extdata/species_idf/mmusculus_idf.rds")
+
+# compute IDFs using GO for all other organisms
+idf_other = computeIdf(godb$TERM, godb$DEFINITION)
+saveRDS(idf_other, "./inst/extdata/species_idf/all_idf.rds")
 
 #----visualise data availability----
 #ID type presence
