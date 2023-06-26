@@ -5,7 +5,7 @@ xenium_example = cellular(.silent=FALSE,
   dimred = c('PCA', 'UMAP'),
   dimred_fa = 'PCA',
   collections = c('CP:REACTOME', 'CP:BIOCARTA', 'CP:PID', 'CP:KEGG', 'CP:WIKIPATHWAYS', 'h', 'GO:BP', 'GO:CC', 'GO:MF'),
-  org = 'mm')
+  org = 'mmusculus')
 
 usethis::use_data(xenium_example, overwrite = TRUE)
 jsonlite::write_json(jsonlite::fromJSON(xenium_example), '../examples/xenium.json')
