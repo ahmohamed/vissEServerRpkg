@@ -4,6 +4,7 @@ library(GO.db)
 library(GSEABase)
 library(org.Hs.eg.db)
 library(org.Mm.eg.db)
+library(msigdb)
 
 #----set params----
 #creation date
@@ -87,7 +88,15 @@ organisms |>
   mutate(Species = gsub("_.*", "", Species)) |>
   saveRDS("inst/extdata/species_info.rds")
 
-#----create ID maps for human and mouse----
+#----create DB and ID maps for human and mouse----
+# msigdb
+hsapiens = appendKEGG(getMsigdb("hs"))
+mmusculus = appendKEGG(getMsigdb("mm"))
+
+saveRDS(hsapiens, file.path(outdir, "hsapiens_gsc.rds"))
+saveRDS(mmusculus, file.path(outdir, "mmusculus_gsc.rds"))
+
+#ID map
 org_cols = c("ENSEMBL", "ENTREZID", "SYMBOL", "UNIPROT")
 hsmap = select(org.Hs.eg.db, keys(org.Hs.eg.db, 'SYMBOL'), org_cols, 'SYMBOL')
 hsmap = hsmap[, org_cols]
