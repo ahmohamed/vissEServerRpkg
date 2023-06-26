@@ -1,8 +1,8 @@
 #' @export
 gsea = funwrapper(function(
   genelist,
-  idtype='SYM',
-  org='hs',
+  org=getSpecies(),
+  idtype=getIdTypes(org),
   collections='all',
   scoretype="std",
   minSize=3,
@@ -14,11 +14,11 @@ gsea = funwrapper(function(
     "Starting GSEA with %d genes, ID type %s, organism %s and collections %s",
     length(genelist), idtype, org, paste(collections, collapse = ", ")
   ))
-  msigdb = getCollections(idtype=idtype, org=org, collections=collections)
+  msigdb = getCollections(org=org, collections=collections)
   message(sprintf("Testing enrichement for %d genesets", length(msigdb)))
 
   genelist = setNames(as.numeric(sapply(genelist, "[[", 2)), sapply(genelist, "[[", 1))
-  converted_ids = handle_ids(ids=names(genelist), msigdb=msigdb, org=org, idtype=idtype)
+  converted_ids = handle_ids(ids=names(genelist), gsc=msigdb, org=org, idtype=idtype)
   names(genelist) = converted_ids[names(genelist)]
   genelist = genelist[!duplicated(names(genelist))]
   gene_summary = geneSummary(msigdb, names(genelist))

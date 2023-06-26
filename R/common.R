@@ -266,7 +266,7 @@ visseWrapper <- function(siggs, gsStats, gStats = NULL, gStat_name="Gene-level s
     p3 = vissE::plotGeneStats(gStats, siggs, grps, statName = gStat_name, topN = 5)
     out$genestats = p3$data |> dplyr::arrange(Group, rank) |> dplyr::select(-rank)
 
-    comp_ppi = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats, org=org)
+    comp_ppi = vissE:::computeMsigGroupPPI(ppi, siggs, grps, gStats)
     if (igraph::ecount(comp_ppi) > 0) {
       ppi_grps = comp_ppi |>
         tidygraph::activate(nodes) |>
