@@ -1,7 +1,12 @@
 api_version = 0.1
 
+getPackageFile <- function(fpath) {
+  parentdir = system.file("extdata", package = "vissEServer")
+  file.path(parentdir, fpath)
+}
+
 getSpecies <- function() {
-  fpath = system.file("extdata/species_info.rds", package = "vissEServer")
+  fpath = getPackageFile("species_info.rds")
   species = readRDS(fpath)
   species$Species
 }
@@ -10,7 +15,7 @@ getIdTypes <- function(org = getSpecies()) {
   org = match.arg(org)
 
   # load supported ID data
-  fpath = system.file("extdata/species_geneid_present.rds", package = "vissEServer")
+  fpath = getPackageFile("species_geneid_present.rds")
   idtypes = readRDS(fpath)
 
   # subset organism
@@ -38,7 +43,7 @@ getCollections <- function(org = getSpecies(), collections = "all", minSize = 0,
   org = match.arg(org)
 
   # load gene-set collection
-  fpath = system.file(sprintf("extdata/species_gsc/%s_gsc.rds", org), package = "vissEServer")
+  fpath = getPackageFile(sprintf("species_gsc/%s_gsc.rds", org))
   gsc = readRDS(fpath)
 
   # subset collections
@@ -105,7 +110,7 @@ convert_ids <- function(ids, org = getSpecies(), from = getIdTypes(org), to = ge
   to = match.arg(to)
 
   # load gene ID map for organism
-  fpath = system.file(sprintf("extdata/species_gsc/%s_idmap.rds", org), package = "vissEServer")
+  fpath = getPackageFile(sprintf("species_gsc/%s_idmap.rds", org))
   idmap = readRDS(fpath)
 
   # check keys
@@ -167,7 +172,7 @@ getPPI <- function(org = getSpecies()) {
   }
 
   #read PPI network
-  fpath = system.file("extdata/imex.rds", package = "vissEServer")
+  fpath = getPackageFile("imex.rds")
   imex = readRDS(fpath)
   
   #subset to species

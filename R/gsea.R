@@ -1,8 +1,8 @@
 #' @export
 gsea = funwrapper(function(
   genelist,
-  org=getSpecies(),
-  idtype=getIdTypes(org),
+  org,
+  idtype,
   collections='all',
   scoretype="std",
   minSize=3,

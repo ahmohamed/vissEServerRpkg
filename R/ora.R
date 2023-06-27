@@ -2,8 +2,8 @@
 #' @export
 ora = funwrapper(function(
   genelist,
-  org=getSpecies(),
-  idtype=getIdTypes(org),
+  org,
+  idtype,
   collections='all',
   minSize=0,
   maxSize=100000,
