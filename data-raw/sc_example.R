@@ -8,7 +8,8 @@ sc_example = cellular(.silent=FALSE,
   method_features = 'HVG',
   dimred = c('PCA', 'UMAP'),
   dimred_fa = 'PCA',
-  collections = c('CP:REACTOME', 'CP:BIOCARTA', 'CP:PID', 'CP:KEGG', 'CP:WIKIPATHWAYS', 'h', 'GO:BP', 'GO:CC', 'GO:MF'))
+  collections = c('CP:REACTOME', 'CP:BIOCARTA', 'CP:PID', 'CP:KEGG', 'CP:WIKIPATHWAYS', 'h', 'GO:BP', 'GO:CC', 'GO:MF'),
+  org = 'hsapiens')
 
 usethis::use_data(sc_example, overwrite = TRUE)
 jsonlite::write_json(jsonlite::fromJSON(sc_example), '../examples/sc.json')
